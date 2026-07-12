@@ -73,21 +73,23 @@
     `);
 
     GM_addStyle(`
+        /* ===== ПАНЕЛЬ (прижата к правому краю) ===== */
         #panelTaskbar {
             position: fixed !important;
-            bottom: 10% !important;
-            right: 10% !important;
+            top: 10% !important;
+            right: 0 !important;
             width: 64px !important;
-            max-height: 80vh !important;
+            height: 80% !important;
             background: rgba(255, 255, 255, 0.95) !important;
             backdrop-filter: blur(10px) !important;
             -webkit-backdrop-filter: blur(10px) !important;
-            border-radius: 24px !important;
+            border-radius: 24px 0 0 24px !important;
             padding: 12px 8px !important;
             box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.12),
+                -4px 0 32px rgba(0, 0, 0, 0.08),
                 inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
             border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            border-right: none !important;
             z-index: 999999 !important;
             display: flex !important;
             flex-direction: column !important;
@@ -193,7 +195,7 @@
             display: none !important;
         }
 
-        /* ===== СТИЛИ ДЛЯ ОКОН ПЛАГИНОВ ===== */
+        /* ===== ОКНО ПЛАГИНА (справа, на всю высоту) ===== */
         #panelWindows {
             position: fixed !important;
             top: 0 !important;
@@ -206,28 +208,25 @@
 
         .plugin-window {
             position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) scale(0.9) !important;
-            width: 500px !important;
-            max-width: 90vw !important;
-            max-height: 80vh !important;
+            top: 10% !important;
+            right: 64px !important;
+            width: 400px !important;
+            height: 80% !important;
             background: white !important;
-            border-radius: 16px !important;
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3) !important;
+            border-radius: 24px 0 0 24px !important;
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.15) !important;
             pointer-events: auto !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transform: translateX(420px) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
             display: flex !important;
             flex-direction: column !important;
             overflow: hidden !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            border-right: none !important;
         }
 
         .plugin-window.open {
-            opacity: 1 !important;
-            visibility: visible !important;
-            transform: translate(-50%, -50%) scale(1) !important;
+            transform: translateX(0) !important;
         }
 
         .plugin-window.hidden {
@@ -242,29 +241,21 @@
             border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
             background: #f8f9fa !important;
             flex-shrink: 0 !important;
+            min-height: 56px !important;
         }
 
         .plugin-window .window-title {
             font-weight: 600 !important;
             font-size: 16px !important;
             color: #1a1a1a !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
         }
 
+        /* КРЕСТИК СКРЫТ */
         .plugin-window .window-close {
-            width: 32px !important;
-            height: 32px !important;
-            border: none !important;
-            border-radius: 50% !important;
-            background: rgba(0, 0, 0, 0.04) !important;
-            color: #666 !important;
-            font-size: 16px !important;
-            cursor: pointer !important;
-            transition: all 0.2s !important;
-        }
-
-        .plugin-window .window-close:hover {
-            background: rgba(255, 59, 48, 0.1) !important;
-            color: #ff3b30 !important;
+            display: none !important;
         }
 
         .plugin-window .window-content {
@@ -276,11 +267,19 @@
             line-height: 1.6 !important;
         }
 
-        /* ===== СТИЛИ ДЛЯ УВЕДОМЛЕНИЙ ===== */
+        .plugin-window .window-content::-webkit-scrollbar {
+            width: 6px !important;
+        }
+        .plugin-window .window-content::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15) !important;
+            border-radius: 10px !important;
+        }
+
+        /* ===== УВЕДОМЛЕНИЯ ===== */
         #panelNotifications {
             position: fixed !important;
             top: 20px !important;
-            right: 20px !important;
+            right: 84px !important;
             z-index: 9999999 !important;
             display: flex !important;
             flex-direction: column !important;
