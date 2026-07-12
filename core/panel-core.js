@@ -383,7 +383,7 @@
         /* ===== АДАПТИВ ===== */
         @media (max-width: 768px) {
             #panelTaskbar {
-                width: 40px !important;
+                msx-width: 3% !important;
             }
             .taskbar-icon {
                 font-size: 14px !important;
@@ -412,7 +412,7 @@
 
         @media (max-width: 480px) {
             #panelTaskbar {
-                width: 36px !important;
+                max-width: 3% !important;
                 gap: 3px !important;
             }
             .taskbar-icon {
