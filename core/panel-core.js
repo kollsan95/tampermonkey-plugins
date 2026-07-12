@@ -126,7 +126,6 @@
             backdrop-filter: blur(10px) !important;
             -webkit-backdrop-filter: blur(10px) !important;
             border-radius: 20px 0 0 20px !important;
-            padding: 12px 6px !important;
             z-index: 999999 !important;
             display: flex !important;
             flex-direction: column !important;
@@ -189,6 +188,7 @@
             color: #1a1a1a !important;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
             transform: scale(1.05) !important;
+            border-radius: 0 20px 20px 0 !important;
         }
 
         /* Tooltip для иконок */
@@ -261,11 +261,11 @@
         .plugin-window {
             position: fixed !important;
             top: 10% !important;
-            right: 48px !important;
+            right: 0 !important;
             width: 30vw !important;
             min-width: 280px !important;
             max-width: 500px !important;
-            height: 80% !important;
+            height: 67% !important;
             background: white !important;
             border-radius: 20px 0 0 20px !important;
             box-shadow: -8px 0 40px rgba(0, 0, 0, 0.12) !important;
@@ -279,6 +279,7 @@
             border-right: none !important;
             opacity: 0 !important;
             visibility: hidden !important;
+            padding-right: 3%;
         }
 
         .plugin-window.open {
@@ -390,7 +391,6 @@
         @media (max-width: 768px) {
             #panelTaskbar {
                 width: 40px !important;
-                padding: 10px 4px !important;
             }
             .taskbar-icon {
                 width: 32px !important;
@@ -424,7 +424,6 @@
         @media (max-width: 480px) {
             #panelTaskbar {
                 width: 36px !important;
-                padding: 8px 3px !important;
                 gap: 3px !important;
             }
             .taskbar-icon {
