@@ -1,0 +1,27 @@
+{
+  "core": {
+    "version": "1.0.55",
+    "name": "Panel Core",
+    "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/panel-core.user.js"
+  },
+  "plugins": [
+    {
+      "id": "zones-plugin",
+      "name": "Анализ зон",
+      "version": "1.0.0",
+      "icon": "🎫",
+      "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/zones-plugin.js",
+      "enabled": true,
+      "priority": 10
+    },
+    {
+      "id": "my-new-plugin",
+      "name": "Мой новый плагин",
+      "version": "1.0.0",
+      "icon": "🚀",
+      "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/my-new-plugin.js",
+      "enabled": true,
+      "priority": 20
+    }
+  ]
+}
