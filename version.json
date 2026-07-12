@@ -1,34 +1,31 @@
 {
   "core": {
-    "version": "1.0.33",
+    "version": "1.0.34",
     "name": "Panel Core",
-    "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/panel-core.user.js",
-    "changelog": "Обновлены стили"
+    "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/panel-core.user.js"
   },
   "plugins": [
     {
       "id": "zones-plugin",
-      "name": "Зоны зала",
-      "version": "1.0.0",
+      "name": "Анализ зон",
+      "version": "1.0.4",
       "icon": "🎫",
-      "description": "Отображение зон на карте зала",
+      "description": "Анализ зон карты зала: поиск сломанных зон",
       "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/zones-plugin.js",
+      "routes": ["/session/*/map/section/*"],
       "enabled": true,
-      "author": "kollsan95",
-      "changelog": "Первый релиз плагина",
-      "routes": ["/session/*/map/section/*"]
+      "author": "kollsan95"
     },
     {
       "id": "my-new-plugin",
       "name": "Мой новый плагин",
       "version": "1.0.0",
       "icon": "🚀",
-      "description": "Работает на страницах пользователей",
+      "description": "Пример плагина-заглушки",
       "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/my-new-plugin.js",
+      "routes": [],
       "enabled": true,
-      "author": "kollsan95",
-      "changelog": "Первый релиз",
-      "routes":[]
+      "author": "kollsan95"
     }
   ],
   "lastUpdate": "2024-01-15T12:00:00Z"

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Panel Core - Универсальная панель управления
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.32
+// @version      1.0.34
 // @description  Ядро панели управления. Загружает плагины из version.json с уведомлениями
 // @author       kollsan95
 // @match        *://*/*
@@ -480,11 +480,24 @@
                 return false;
             }
 
+            // Если плагин уже есть как заглушка — обновляем его
             if (this._plugins[plugin.id]) {
-                console.warn(`⚠️ Panel Core: Плагин "${plugin.id}" уже зарегистрирован`);
-                return false;
+                const existing = this._plugins[plugin.id];
+                existing.name = plugin.name;
+                existing.icon = plugin.icon;
+                existing.onOpen = plugin.onOpen;
+                existing.onClose = plugin.onClose || null;
+                existing.onBadgeUpdate = plugin.onBadgeUpdate || null;
+                existing._loaded = true;
+                existing._routes = plugin.routes || existing._routes || [];
+                existing.priority = plugin.priority || existing.priority || 10;
+                
+                console.log(`✅ Panel Core: Плагин "${plugin.name}" (${plugin.id}) обновлён (загружен)`);
+                this._updateTaskbar();
+                return true;
             }
 
+            // Новый плагин
             this._plugins[plugin.id] = {
                 id: plugin.id,
                 name: plugin.name,
@@ -703,6 +716,7 @@
 
                         let newPluginsCount = 0;
                         let updatedPluginsCount = 0;
+                        let pluginsToLoad = [];
 
                         if (data.plugins && Array.isArray(data.plugins)) {
                             data.plugins.forEach(pluginConfig => {
@@ -717,6 +731,7 @@
                                         console.log(`🔄 Panel Core: Обновление "${pluginConfig.name}" (${existing._version} → ${pluginConfig.version})`);
                                         existing._version = pluginConfig.version;
                                         existing._routes = pluginConfig.routes || [];
+                                        existing._downloadURL = pluginConfig.downloadURL;
                                         updatedPluginsCount++;
                                         
                                         const notifKey = `${pluginConfig.id}_${pluginConfig.version}`;
@@ -757,6 +772,7 @@
                                     _pluginConfig: pluginConfig
                                 };
                                 
+                                pluginsToLoad.push(pluginConfig.id);
                                 newPluginsCount++;
                                 
                                 const notifKey = `${pluginConfig.id}_added`;
@@ -779,6 +795,14 @@
                                 console.log(`✅ Panel Core: Обновлено ${updatedPluginsCount} плагинов`);
                             }
                             
+                            // Загружаем новые плагины
+                            pluginsToLoad.forEach(id => {
+                                const plugin = this._plugins[id];
+                                if (plugin && plugin._downloadURL) {
+                                    this._loadPluginFromURL(plugin);
+                                }
+                            });
+                            
                             if (newPluginsCount > 0 || updatedPluginsCount > 0) {
                                 this._updateTaskbar();
                             }
@@ -790,6 +814,39 @@
                 }.bind(this),
                 onerror: function(error) {
                     console.error('❌ Panel Core: Ошибка загрузки version.json:', error);
+                }
+            });
+        },
+
+        _loadPluginFromURL: function(plugin) {
+            if (!plugin._downloadURL) {
+                console.error(`❌ Panel Core: Нет URL для загрузки плагина "${plugin.name}"`);
+                return;
+            }
+
+            console.log(`📥 Panel Core: Загрузка плагина "${plugin.name}"...`);
+
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: plugin._downloadURL,
+                onload: function(response) {
+                    if (response.status !== 200) {
+                        console.error(`❌ Panel Core: Не удалось загрузить ${plugin.name} (${response.status})`);
+                        return;
+                    }
+
+                    try {
+                        const script = document.createElement('script');
+                        script.textContent = response.responseText;
+                        document.head.appendChild(script);
+                        document.head.removeChild(script);
+                        console.log(`✅ Panel Core: Плагин "${plugin.name}" загружен`);
+                    } catch (e) {
+                        console.error(`❌ Panel Core: Ошибка выполнения ${plugin.name}:`, e);
+                    }
+                }.bind(this),
+                onerror: function() {
+                    console.error(`❌ Panel Core: Ошибка загрузки ${plugin.name}`);
                 }
             });
         },
