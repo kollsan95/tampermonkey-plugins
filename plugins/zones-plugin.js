@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Zones Plugin - Анализ зон
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.4
-// @description  Анализ зон карты зала: поиск сломанных зон в секторе
+// @version      1.0.5
+// @description  Анализ зон карты зала
 // @author       kollsan95
 // @grant        GM_xmlhttpRequest
 // @grant        GM_notification
@@ -11,21 +11,11 @@
 // @run-at       document-end
 // ==/UserScript//
 
-(function() {
+// Плагин просто определяет модуль, который будет использован Core
+window.__plugin_module = (function() {
     'use strict';
 
-    if (typeof PanelCore === 'undefined') {
-        console.log('⏳ Zones Plugin: Ожидание Core...');
-        return;
-    }
-
     const PLUGIN_ID = 'zones-plugin';
-
-    if (PanelCore.getPlugin(PLUGIN_ID)) {
-        return;
-    }
-
-    console.log('🎫 Zones Plugin: Регистрация...');
 
     function getSessionId() {
         const match = window.location.hash.match(/\/session\/(\d+)/);
@@ -152,11 +142,13 @@
         const allPlaces = data.filter(item => item[idx.type] === '0');
         const brokenZones = allPlaces.filter(item => item[idx.zoneId] === 0 && !item[idx.available]);
 
-        // Управление уведомлением через Core
-        if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
-            PanelCore.updateBadge(PLUGIN_ID, 1);
-        } else if (brokenZones.length === 0) {
-            PanelCore.updateBadge(PLUGIN_ID, 0);
+        // Обновляем badge через Core
+        if (typeof PanelCore !== 'undefined') {
+            if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
+                PanelCore.updateBadge(PLUGIN_ID, 1);
+            } else if (brokenZones.length === 0) {
+                PanelCore.updateBadge(PLUGIN_ID, 0);
+            }
         }
 
         const validPlaces = allPlaces.filter(item => item[idx.zoneId] > 0);
@@ -289,26 +281,20 @@
 
         if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
             wasOpenedAfterBrokenFound = true;
-            PanelCore.updateBadge(PLUGIN_ID, 0);
+            if (typeof PanelCore !== 'undefined') {
+                PanelCore.updateBadge(PLUGIN_ID, 0);
+            }
         }
     }
 
-    PanelCore.registerPlugin({
-        id: PLUGIN_ID,
-        name: 'Анализ зон',
-        icon: '🎫',
-        badge: 0,
-        priority: 10,
-        version: '1.0.4',
-        routes: ['/session/*/map/section/*'],
+    // Возвращаем модуль для Core
+    return {
         onOpen: function(container) {
             loadData(container);
         },
         onClose: function() {
             console.log('🎫 Zones Plugin: Закрыт');
         }
-    });
-
-    console.log('✅ Zones Plugin: Зарегистрирован');
+    };
 
 })();
