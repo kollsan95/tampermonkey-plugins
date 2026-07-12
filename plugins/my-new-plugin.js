@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         My New Plugin - Анализ зон
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.1
-// @description  Анализ зон карты зала
+// @version      1.0.2
+// @description  Анализ зон карты зала: поиск сломанных зон в секторе
 // @author       kollsan95
 // @match        *://*/*#/session/*/map/section/*
 // @grant        GM_xmlhttpRequest
@@ -16,13 +16,12 @@
     'use strict';
 
     // ============================================================
-    // 1. ПРОВЕРЯЕМ, ЧТО CORE УЖЕ ЕСТЬ
+    // 1. ПРОВЕРКА CORE
     // ============================================================
 
-    // Если Core нет — просто выходим. 
-    // Core сам перезагрузит плагин, когда будет готов.
     if (typeof PanelCore === 'undefined') {
-        console.log('⏳ My Plugin: Core не найден, выходим');
+        // Core не загружен — выходим, он сам подгрузит плагин
+        console.log('⏳ My Plugin: Core не найден');
         return;
     }
 
@@ -292,6 +291,7 @@
         html += `</div>`;
         container.innerHTML = html;
 
+        // Обработчики раскрытия
         container.querySelectorAll('.zone-group').forEach(group => {
             const header = group.querySelector('.zone-header');
             const body = group.querySelector('.zone-body');
@@ -310,6 +310,7 @@
             });
         });
 
+        // Снимаем уведомление
         if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
             wasOpenedAfterBrokenFound = true;
             PanelCore.updateBadge(PLUGIN_ID, 0);
@@ -326,7 +327,7 @@
         icon: '📊',
         badge: 0,
         priority: 10,
-        version: '1.0.1',
+        version: '1.0.2',
         onOpen: function(container) {
             loadData(container);
         },
