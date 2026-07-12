@@ -25,11 +25,6 @@
  *   3. Core проверяет, какие плагины активны на текущей странице
  *   4. Показывает иконки активных плагинов в панели
  *   5. При клике на иконку — открывается окно плагина
- * 
- * 📌 ДЛЯ РАЗРАБОТЧИКОВ ПЛАГИНОВ:
- *   - Плагин должен иметь @match для нужных страниц
- *   - Плагин регистрируется через PanelCore.registerPlugin()
- *   - Всё остальное делает Core
  * ============================================================
  */
 
@@ -43,7 +38,7 @@
     // ============================================================
     const CONFIG = {
         VERSION_URL: 'https://kollsan95.github.io/tampermonkey-plugins/version.json',
-        CHECK_INTERVAL: 3600000, // 1 час
+        CHECK_INTERVAL: 3600000,
         NOTIFICATIONS_KEY: 'panel_notifications_seen'
     };
 
@@ -53,7 +48,7 @@
     GM_addStyle(`
         #panelTaskbar {
             position: fixed;
-            right: 0;
+            right: 20px;
             top: 50%;
             transform: translateY(-50%);
             width: 44px;
@@ -147,7 +142,7 @@
         #panelWindows {
             position: fixed;
             top: 0;
-            right: 44px;
+            right: 64px;
             width: 20vw;
             min-width: 260px;
             max-width: 400px;
@@ -169,7 +164,7 @@
             box-sizing: border-box;
             padding: 16px 20px;
             overflow-y: auto;
-            transform: translateX(calc(100% + 44px));
+            transform: translateX(calc(100% + 64px));
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
             box-shadow: -4px 0 25px rgba(0,0,0,0.1);
@@ -227,7 +222,7 @@
         #panelNotifications {
             position: fixed;
             bottom: 20px;
-            right: 60px;
+            right: 80px;
             z-index: 10000;
             display: flex;
             flex-direction: column;
@@ -317,7 +312,6 @@
 
             console.log(`✅ Panel Core: Плагин "${plugin.name}" (${plugin.id}) зарегистрирован`);
             
-            // Обновляем панель
             this._updateTaskbar();
             return true;
         },
@@ -419,7 +413,6 @@
                         const data = JSON.parse(response.responseText);
                         const seen = JSON.parse(GM_getValue(CONFIG.NOTIFICATIONS_KEY, '{}'));
 
-                        // Проверяем обновление Core
                         if (data.core) {
                             const current = GM_getValue('panel_core_version', '0.0.0');
                             if (current !== data.core.version) {
@@ -436,15 +429,12 @@
                             }
                         }
 
-                        // Проверяем плагины
                         if (data.plugins) {
                             data.plugins.forEach(function(pluginConfig) {
                                 if (!pluginConfig.enabled) return;
 
-                                // Проверяем, зарегистрирован ли плагин
                                 const existing = this._plugins[pluginConfig.id];
                                 if (existing) {
-                                    // Обновление версии
                                     if (existing._version !== pluginConfig.version) {
                                         console.log(`🔄 Обновлён: ${pluginConfig.name} (${pluginConfig.version})`);
                                         existing._version = pluginConfig.version;
@@ -452,7 +442,6 @@
                                     return;
                                 }
 
-                                // Новый плагин — загружаем код
                                 console.log(`📥 Новый плагин: ${pluginConfig.name}`);
                                 this._loadPluginCode(pluginConfig);
                             }.bind(this));
@@ -479,7 +468,6 @@
                     }
 
                     try {
-                        // Выполняем код плагина
                         const script = document.createElement('script');
                         script.textContent = response.responseText;
                         document.head.appendChild(script);
@@ -487,7 +475,6 @@
                         
                         console.log(`✅ Panel Core: Плагин "${pluginConfig.name}" загружен`);
                         
-                        // Показываем уведомление
                         this._showNotification(
                             `✨ ${pluginConfig.name}`,
                             pluginConfig.description || 'Доступен новый плагин',
