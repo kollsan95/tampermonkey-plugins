@@ -80,15 +80,9 @@
             width: 2vw !important;
             max-width: 55px !important;
             height: 80% !important;
-            background: rgb(236, 235, 235) !important;
             backdrop-filter: blur(10px) !important;
             -webkit-backdrop-filter: blur(10px) !important;
             padding: 1.2vh 0.6vw !important;
-            box-shadow: 
-                -4px 0 32px rgba(0, 0, 0, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            border-right: none !important;
             z-index: 999999 !important;
             display: flex !important;
             flex-direction: column !important;
@@ -229,7 +223,7 @@
         .plugin-window {
             position: fixed !important;
             top: 10% !important;
-            right: 4vw !important;
+            right: 0 !important;
             width: 30vw !important;
             min-width: 280px !important;
             max-width: 500px !important;
@@ -437,7 +431,6 @@
                 max-width: 40px !important;
                 padding: 0.8vh 0.3vw !important;
                 gap: 0.3vh !important;
-                border-radius: 16px 0 0 16px !important;
             }
             .taskbar-icon {
                 width: 4vw !important;
