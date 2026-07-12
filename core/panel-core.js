@@ -570,6 +570,24 @@
         #panel-toggle-btn.pulse {
             animation: togglePulse 0.4s ease !important;
         }
+        /* Индикатор обновления */
+        .taskbar-icon .update-indicator {
+            position: absolute !important;
+            top: -2px !important;
+            right: -2px !important;
+            width: 8px !important;
+            height: 8px !important;
+            background: #34c759 !important;
+            border-radius: 50% !important;
+            border: 2px solid rgba(255, 255, 255, 0.95) !important;
+            opacity: 0 !important;
+            transition: opacity 0.3s !important;
+            box-shadow: 0 0 8px rgba(52, 199, 89, 0.4) !important;
+        }
+
+        .taskbar-icon .update-indicator.show {
+            opacity: 1 !important;
+        }
     `);
 
     // ============================================================
@@ -618,21 +636,27 @@
         _togglePanel: function() {
             const taskbar = document.getElementById('panelTaskbar');
             const toggleBtn = document.getElementById('panel-toggle-btn');
-            if (!taskbar) return;
+            if (!taskbar || !toggleBtn) {
+                console.warn('⚠️ Panel Core: Панель или кнопка не найдены');
+                return;
+            }
 
             const isVisible = !taskbar.classList.contains('hidden');
+            
+            // Обновляем tooltip безопасно
+            const tooltip = toggleBtn.querySelector('.tooltip');
             
             if (isVisible) {
                 taskbar.classList.add('hidden');
                 toggleBtn.classList.remove('active');
                 toggleBtn.textContent = '▶';
-                toggleBtn.querySelector('.tooltip').textContent = 'Показать панель';
+                if (tooltip) tooltip.textContent = 'Показать панель';
                 this._setPanelState(false);
             } else {
                 taskbar.classList.remove('hidden');
                 toggleBtn.classList.add('active');
                 toggleBtn.textContent = '◀';
-                toggleBtn.querySelector('.tooltip').textContent = 'Скрыть панель';
+                if (tooltip) tooltip.textContent = 'Скрыть панель';
                 this._setPanelState(true);
             }
             
@@ -645,20 +669,24 @@
         _applyPanelState: function() {
             const taskbar = document.getElementById('panelTaskbar');
             const toggleBtn = document.getElementById('panel-toggle-btn');
-            if (!taskbar || !toggleBtn) return;
+            if (!taskbar || !toggleBtn) {
+                console.warn('⚠️ Panel Core: Панель или кнопка не найдены');
+                return;
+            }
 
             const isVisible = this._getPanelState();
+            const tooltip = toggleBtn.querySelector('.tooltip');
             
             if (isVisible) {
                 taskbar.classList.remove('hidden');
                 toggleBtn.classList.add('active');
                 toggleBtn.textContent = '◀';
-                toggleBtn.querySelector('.tooltip').textContent = 'Скрыть панель';
+                if (tooltip) tooltip.textContent = 'Скрыть панель';
             } else {
                 taskbar.classList.add('hidden');
                 toggleBtn.classList.remove('active');
                 toggleBtn.textContent = '▶';
-                toggleBtn.querySelector('.tooltip').textContent = 'Показать панель';
+                if (tooltip) tooltip.textContent = 'Показать панель';
             }
         },
         // ============================================================
@@ -1147,7 +1175,7 @@
             const toggleBtn = document.createElement('button');
             toggleBtn.id = 'panel-toggle-btn';
             toggleBtn.innerHTML = `
-                ▶
+                ◀
                 <span class="tooltip">Скрыть панель</span>
             `;
             toggleBtn.addEventListener('click', () => {
