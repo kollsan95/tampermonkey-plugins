@@ -40,12 +40,10 @@
         /* ===== КНОПКА-ФЛАЖОК (всегда видна) ===== */
         #panel-toggle-flag {
             position: fixed !important;
-            top: calc(10% + 10px) !important;
+            bottom: 20% !important;
             right: 0 !important;
-            width: 28px !important;
-            height: 40px !important;
-            min-width: 28px !important;
-            min-height: 40px !important;
+            height: 3% !important;
+            min-height: 30px !important;
             border: none !important;
             border-radius: 8px 0 0 8px !important;
             background: rgba(255, 255, 255, 0.95) !important;
@@ -122,17 +120,13 @@
             position: fixed !important;
             top: 10% !important;
             right: 0 !important;
-            width: 48px !important;
-            max-width: 55px !important;
-            height: 80% !important;
-            background: rgba(245, 245, 247, 0.95) !important;
+            width: 2.5% !important;
+            max-width: 40px !important;
+            height: 67% !important;
             backdrop-filter: blur(10px) !important;
             -webkit-backdrop-filter: blur(10px) !important;
             border-radius: 20px 0 0 20px !important;
             padding: 12px 6px !important;
-            box-shadow: -4px 0 32px rgba(0, 0, 0, 0.08) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            border-right: none !important;
             z-index: 999999 !important;
             display: flex !important;
             flex-direction: column !important;
