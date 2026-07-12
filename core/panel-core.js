@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Panel Core - Универсальная панель управления
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.45
-// @description  Ядро панели управления. Загружает и управляет плагинами.
+// @version      1.0.50
+// @description  Ядро панели управления. Загружает плагины, создаёт иконки.
 // @author       kollsan95
 // @match        *://*/*
 // @grant        GM_addStyle
@@ -115,7 +115,7 @@
             overflow-y: auto !important;
             overflow-x: hidden !important;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-            transition: transform 0.3s, opacity 0.3s !important;
+            transition: all 0.3s !important;
         }
         #panelTaskbar.hidden {
             transform: translateX(100%) !important;
@@ -376,6 +376,7 @@
         _openPluginId: null,
         _isPanelVisible: true,
         _isInitialized: false,
+        _isLoaded: false,
 
         // ============================================================
         // Управление панелью
@@ -414,22 +415,75 @@
             const isVisible = !taskbar.classList.contains('hidden');
             
             if (isVisible) {
+                // Закрываем панель → удаляем всё
+                this._closePanel();
+            } else {
+                // Открываем панель → создаём заново
+                this._openPanel();
+            }
+        },
+
+        _closePanel: function() {
+            const taskbar = document.getElementById('panelTaskbar');
+            const flag = document.getElementById('panel-toggle-flag');
+            
+            if (taskbar) {
                 taskbar.classList.add('hidden');
+                // Удаляем иконки
+                taskbar.innerHTML = '';
+            }
+            
+            if (flag) {
                 flag.classList.remove('active');
                 flag.querySelector('.flag-icon').textContent = '◀';
                 flag.querySelector('.flag-tooltip').textContent = 'Показать панель';
-                this._isPanelVisible = false;
-                this._setPanelState(false);
-                this.closeAllPlugins();
-            } else {
+            }
+            
+            // Закрываем все окна
+            this.closeAllPlugins();
+            
+            // Очищаем окна
+            if (this._windows) {
+                this._windows.innerHTML = '';
+            }
+            
+            // Очищаем данные плагинов
+            Object.keys(this._plugins).forEach(id => {
+                if (this._plugins[id]._cleanup) {
+                    this._plugins[id]._cleanup();
+                }
+                delete this._plugins[id];
+            });
+            this._plugins = {};
+            
+            this._isPanelVisible = false;
+            this._setPanelState(false);
+            this._isLoaded = false;
+            
+            console.log('🔷 Panel Core: Панель закрыта, данные очищены');
+        },
+
+        _openPanel: function() {
+            const taskbar = document.getElementById('panelTaskbar');
+            const flag = document.getElementById('panel-toggle-flag');
+            
+            if (taskbar) {
                 taskbar.classList.remove('hidden');
+            }
+            
+            if (flag) {
                 flag.classList.add('active');
                 flag.querySelector('.flag-icon').textContent = '▶';
                 flag.querySelector('.flag-tooltip').textContent = 'Скрыть панель';
-                this._isPanelVisible = true;
-                this._setPanelState(true);
-                this._updateTaskbar();
             }
+            
+            this._isPanelVisible = true;
+            this._setPanelState(true);
+            
+            // Загружаем плагины заново
+            this.loadPluginsFromVersion();
+            
+            console.log('🔷 Panel Core: Панель открыта');
         },
 
         _applyPanelState: function() {
@@ -457,6 +511,37 @@
         // ============================================================
         // Публичные методы для плагинов
         // ============================================================
+
+        registerPlugin: function(pluginId, module) {
+            if (this._plugins[pluginId]) {
+                console.warn(`⚠️ Panel Core: Плагин "${pluginId}" уже зарегистрирован`);
+                return;
+            }
+
+            if (!module || typeof module.onOpen !== 'function') {
+                console.warn(`⚠️ Panel Core: Плагин "${pluginId}" не содержит onOpen функцию`);
+                return;
+            }
+
+            this._plugins[pluginId] = {
+                id: pluginId,
+                name: module.name || pluginId,
+                icon: module.icon || '🔌',
+                badge: 0,
+                priority: module.priority || 10,
+                onOpen: module.onOpen,
+                onClose: module.onClose || null,
+                _cleanup: module._cleanup || null,
+                _windowElement: null,
+                _iconElement: null,
+                _loaded: true
+            };
+
+            console.log(`✅ Panel Core: Плагин "${module.name || pluginId}" (${pluginId}) зарегистрирован`);
+            
+            // Добавляем иконку
+            this._addIconToTaskbar(pluginId);
+        },
 
         updateBadge: function(pluginId, count) {
             const plugin = this._plugins[pluginId];
@@ -557,10 +642,6 @@
             return this._openPluginId === pluginId;
         },
 
-        getPlugin: function(pluginId) {
-            return this._plugins[pluginId] || null;
-        },
-
         // ============================================================
         // Загрузка плагинов
         // ============================================================
@@ -571,7 +652,7 @@
                 return;
             }
 
-            console.log('🔍 Panel Core: Проверка обновлений...');
+            console.log('🔍 Panel Core: Загрузка плагинов...');
 
             GM_xmlhttpRequest({
                 method: 'GET',
@@ -605,8 +686,6 @@
                             console.log(`🔷 Panel Core: Версия ядра ${data.core.version}`);
                         }
 
-                        let loadedCount = 0;
-
                         if (data.plugins && Array.isArray(data.plugins)) {
                             data.plugins.forEach(pluginConfig => {
                                 if (!pluginConfig.enabled) {
@@ -614,29 +693,11 @@
                                     return;
                                 }
 
-                                if (this._plugins[pluginConfig.id]) {
-                                    if (this._plugins[pluginConfig.id]._version !== pluginConfig.version) {
-                                        console.log(`🔄 Panel Core: Обновление "${pluginConfig.name}" → v${pluginConfig.version}`);
-                                        this._plugins[pluginConfig.id]._version = pluginConfig.version;
-                                        this._plugins[pluginConfig.id]._routes = pluginConfig.routes || [];
-                                        this._loadPlugin(pluginConfig);
-                                    }
-                                    return;
-                                }
-
                                 console.log(`📥 Panel Core: Загрузка плагина "${pluginConfig.name}" (${pluginConfig.id})`);
                                 console.log(`   Маршруты: ${pluginConfig.routes ? pluginConfig.routes.join(', ') : 'все страницы'}`);
                                 
                                 this._loadPlugin(pluginConfig);
-                                loadedCount++;
                             });
-
-                            if (loadedCount > 0) {
-                                console.log(`✅ Panel Core: Загружено ${loadedCount} плагинов`);
-                                setTimeout(() => {
-                                    this._updateTaskbar();
-                                }, 500);
-                            }
                         }
 
                     } catch (e) {
@@ -663,22 +724,6 @@
                     }
 
                     try {
-                        // Создаём запись
-                        this._plugins[pluginId] = {
-                            id: pluginId,
-                            name: pluginName,
-                            icon: pluginConfig.icon || '🔌',
-                            _routes: pluginConfig.routes || [],
-                            _version: pluginConfig.version || '1.0.0',
-                            badge: 0,
-                            onOpen: null,
-                            onClose: null,
-                            _windowElement: null,
-                            _iconElement: null,
-                            _loaded: false,
-                            priority: pluginConfig.priority || 10
-                        };
-
                         // Выполняем код плагина
                         const script = document.createElement('script');
                         script.textContent = response.responseText;
@@ -686,38 +731,6 @@
                         document.head.removeChild(script);
 
                         console.log(`✅ Panel Core: Плагин "${pluginName}" загружен`);
-
-                        // Проверяем __plugin_result
-                        const result = window.__plugin_result;
-                        if (result && typeof result.onOpen === 'function') {
-                            const plugin = this._plugins[pluginId];
-                            if (plugin) {
-                                plugin.onOpen = result.onOpen;
-                                plugin.onClose = result.onClose || null;
-                                if (result.icon) plugin.icon = result.icon;
-                                if (result.name) plugin.name = result.name;
-                                plugin._loaded = true;
-                                console.log(`✅ Panel Core: Плагин "${pluginName}" зарегистрирован`);
-                                this._updateTaskbar();
-                            }
-                            delete window.__plugin_result;
-                        } else {
-                            console.warn(`⚠️ Panel Core: Плагин "${pluginName}" не определил __plugin_result`);
-                            const plugin = this._plugins[pluginId];
-                            if (plugin) {
-                                plugin._loaded = true;
-                                plugin.onOpen = function(container) {
-                                    container.innerHTML = `
-                                        <div style="padding:20px;text-align:center;color:#999;">
-                                            <div style="font-size:48px;margin-bottom:16px;">${plugin.icon || '🔌'}</div>
-                                            <h3>${plugin.name || 'Плагин'}</h3>
-                                            <p style="font-size:13px;">Плагин не содержит onOpen функцию</p>
-                                        </div>
-                                    `;
-                                };
-                                this._updateTaskbar();
-                            }
-                        }
 
                     } catch (e) {
                         console.error(`❌ Panel Core: Ошибка выполнения ${pluginName}:`, e);
@@ -733,56 +746,26 @@
         // Управление панелью задач
         // ============================================================
 
-        _updateTaskbar: function() {
-            if (!this._taskbar) {
-                console.warn('⚠️ Panel Core: _taskbar не существует');
-                return;
-            }
+        _addIconToTaskbar: function(pluginId) {
+            const plugin = this._plugins[pluginId];
+            if (!plugin || !this._taskbar || plugin._iconElement) return;
 
-            this._taskbar.innerHTML = '';
+            const icon = document.createElement('button');
+            icon.className = 'taskbar-icon';
+            icon.dataset.pluginId = pluginId;
+            icon.innerHTML = `
+                ${plugin.icon || '🔌'}
+                <span class="tooltip">${plugin.name || 'Плагин'}</span>
+                <span class="badge hidden">0</span>
+            `;
 
-            const currentUrl = window.location.pathname + window.location.hash;
-            let hasActivePlugins = false;
+            plugin._iconElement = icon;
+            this._taskbar.appendChild(icon);
+            this._updateIconBadge(pluginId);
 
-            const sorted = Object.values(this._plugins).sort((a, b) => (a.priority || 10) - (b.priority || 10));
-
-            sorted.forEach(function(plugin) {
-                const routes = plugin._routes || [];
-                const isActive = routes.length === 0 || routes.some(route => this._matchRoute(currentUrl, route));
-                
-                if (!isActive || !plugin._loaded || typeof plugin.onOpen !== 'function') {
-                    return;
-                }
-
-                hasActivePlugins = true;
-
-                const icon = document.createElement('button');
-                icon.className = 'taskbar-icon';
-                icon.dataset.pluginId = plugin.id;
-                icon.innerHTML = `
-                    ${plugin.icon || '🔌'}
-                    <span class="tooltip">${plugin.name || 'Плагин'}</span>
-                    <span class="badge hidden">0</span>
-                `;
-
-                plugin._iconElement = icon;
-                this._taskbar.appendChild(icon);
-                this._updateIconBadge(plugin.id);
-
-                icon.addEventListener('click', function() {
-                    if (this.isOpen(plugin.id)) {
-                        this.closePlugin(plugin.id);
-                    } else {
-                        this.openPlugin(plugin.id);
-                    }
-                }.bind(this));
+            icon.addEventListener('click', function() {
+                this.openPlugin(pluginId);
             }.bind(this));
-
-            if (!hasActivePlugins) {
-                this._taskbar.classList.add('hidden');
-            } else {
-                this._taskbar.classList.remove('hidden');
-            }
         },
 
         _createWindow: function(pluginId) {
@@ -802,10 +785,10 @@
                 <div class="window-content"></div>
             `;
 
-            win.querySelector('.window-close').addEventListener('click', (e) => {
+            win.querySelector('.window-close').addEventListener('click', function(e) {
                 e.stopPropagation();
                 this.closePlugin(pluginId);
-            });
+            }.bind(this));
 
             this._windows.appendChild(win);
             plugin._windowElement = win;
@@ -826,12 +809,6 @@
                 badge.textContent = '0';
                 badge.classList.add('hidden');
             }
-        },
-
-        _matchRoute: function(url, route) {
-            if (!route || route === '*') return true;
-            const pattern = route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*');
-            return new RegExp(`^${pattern}$`).test(url);
         },
 
         // ============================================================
@@ -923,12 +900,9 @@
 
             if (this._isPanelVisible) {
                 this.loadPluginsFromVersion();
-                setTimeout(() => {
-                    this._updateTaskbar();
-                }, 1000);
             }
 
-            document.addEventListener('click', (e) => {
+            document.addEventListener('click', function(e) {
                 if (this._openPluginId) {
                     const plugin = this._plugins[this._openPluginId];
                     const win = plugin?._windowElement;
@@ -938,13 +912,13 @@
                         this.closePlugin(this._openPluginId);
                     }
                 }
-            });
+            }.bind(this));
 
-            document.addEventListener('keydown', (e) => {
+            document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && this._openPluginId) {
                     this.closePlugin(this._openPluginId);
                 }
-            });
+            }.bind(this));
 
             this._isInitialized = true;
         },
