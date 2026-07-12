@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Zones Plugin - Анализ зон
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.12
+// @version      1.0.15
 // @description  Анализ зон карты зала: поиск сломанных зон в секторе
 // @author       kollsan95
 // @grant        GM_xmlhttpRequest
@@ -14,9 +14,9 @@
 (function() {
     'use strict';
 
+    // ID плагина (используется для обновления badge)
     const PLUGIN_ID = 'zones-plugin';
     let cachedData = null;
-    let isInitialized = false;
 
     // ============================================================
     // 1. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
@@ -79,19 +79,19 @@
     }
 
     // ============================================================
-    // 2. ИНИЦИАЛИЗАЦИЯ (выполняется сразу при загрузке)
+    // 2. ЗАГРУЗКА ДАННЫХ
     // ============================================================
 
-    function init() {
+    function loadData() {
         const sessionId = getSessionId();
         const sectionId = getSectionId();
 
         if (!sessionId || !sectionId) {
-            console.log('⏳ Zones Plugin: Не подходящая страница (нужен /session/*/map/section/*)');
+            console.log('⏳ Zones Plugin: Не подходящая страница');
             return;
         }
 
-        console.log('🎫 Zones Plugin: Инициализация...');
+        console.log('🎫 Zones Plugin: Загрузка данных...');
 
         const mapUrl = `${getApiBaseUrl()}/api/v1/session/${sessionId}/map/section/${sectionId}/places/slim?ignoreSell=true`;
         const sessionUrl = `${getApiBaseUrl()}/api/v1/session/${sessionId}?expand=performance,zones`;
@@ -103,25 +103,16 @@
             if (done === 2) {
                 try {
                     cachedData = processData(mapData, sessionData);
-                    isInitialized = true;
-                    console.log('✅ Zones Plugin: Инициализация завершена');
+                    console.log('✅ Zones Plugin: Данные загружены');
                     
-                    // Регистрируем плагин в Core
-                    if (typeof PanelCore !== 'undefined') {
-                        PanelCore.registerPlugin(PLUGIN_ID, {
-                            name: 'Анализ зон',
-                            icon: '🎫',
-                            priority: 10,
-                            onOpen: function(container) {
-                                renderData(container);
-                            },
-                            onClose: function() {
-                                console.log('🎫 Zones Plugin: Закрыт');
-                            }
-                        });
+                    // Обновляем badge, если есть сломанные зоны
+                    if (cachedData && cachedData.brokenZones.length > 0) {
+                        if (typeof PanelCore !== 'undefined') {
+                            PanelCore.updateBadge(PLUGIN_ID, 1);
+                        }
                     }
                 } catch (e) {
-                    console.error('❌ Zones Plugin: Ошибка обработки:', e);
+                    console.error('❌ Zones Plugin: Ошибка:', e);
                 }
             }
         }
@@ -142,12 +133,11 @@
     }
 
     // ============================================================
-    // 3. ОБРАБОТКА ДАННЫХ (выполняется при инициализации)
+    // 3. ОБРАБОТКА ДАННЫХ
     // ============================================================
 
     function processData(mapData, sessionData) {
         if (!mapData || !mapData.data || !sessionData || !sessionData.zones) {
-            console.warn('⚠️ Zones Plugin: Нет данных');
             return null;
         }
 
@@ -169,15 +159,6 @@
 
         const allPlaces = data.filter(item => item[idx.type] === '0');
         const brokenZones = allPlaces.filter(item => item[idx.zoneId] === 0 && !item[idx.available]);
-
-        // Обновляем badge через Core
-        if (typeof PanelCore !== 'undefined') {
-            if (brokenZones.length > 0) {
-                PanelCore.updateBadge(PLUGIN_ID, 1);
-            } else {
-                PanelCore.updateBadge(PLUGIN_ID, 0);
-            }
-        }
 
         const validPlaces = allPlaces.filter(item => item[idx.zoneId] > 0);
         const zoneStats = {};
@@ -215,7 +196,7 @@
     }
 
     // ============================================================
-    // 4. ОТОБРАЖЕНИЕ (выполняется при клике на иконку)
+    // 4. ОТОБРАЖЕНИЕ
     // ============================================================
 
     function renderData(container) {
@@ -226,7 +207,6 @@
                 <div style="padding:20px;text-align:center;color:#999;">
                     <div style="font-size:32px;margin-bottom:12px;">⏳</div>
                     <p>Данные ещё не загружены</p>
-                    <p style="font-size:12px;color:#ccc;">Попробуйте обновить страницу</p>
                 </div>
             `;
             return;
@@ -348,18 +328,25 @@
     }
 
     // ============================================================
-    // 5. ЗАПУСК
+    // 5. ОПРЕДЕЛЯЕМ ПЛАГИН ДЛЯ CORE
     // ============================================================
 
-    // Ждём Core
-    function waitForCore() {
-        if (typeof PanelCore !== 'undefined') {
-            init();
-            return;
-        }
-        setTimeout(waitForCore, 100);
-    }
+    // Загружаем данные
+    loadData();
 
-    waitForCore();
+    // Определяем плагин для Core
+    window.__plugin_definition = {
+        name: 'Анализ зон',
+        icon: '🎫',
+        priority: 10,
+        onOpen: function(container) {
+            renderData(container);
+        },
+        onClose: function() {
+            console.log('🎫 Zones Plugin: Закрыт');
+        }
+    };
+
+    console.log('✅ Zones Plugin: __plugin_definition определён');
 
 })();

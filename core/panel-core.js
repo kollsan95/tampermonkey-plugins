@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Panel Core - Универсальная панель управления
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.50
-// @description  Ядро панели управления. Загружает плагины, создаёт иконки.
+// @version      1.0.51
+// @description  Ядро панели управления. Загружает плагины и управляет ими.
 // @author       kollsan95
 // @match        *://*/*
 // @grant        GM_addStyle
@@ -376,7 +376,6 @@
         _openPluginId: null,
         _isPanelVisible: true,
         _isInitialized: false,
-        _isLoaded: false,
 
         // ============================================================
         // Управление панелью
@@ -415,10 +414,8 @@
             const isVisible = !taskbar.classList.contains('hidden');
             
             if (isVisible) {
-                // Закрываем панель → удаляем всё
                 this._closePanel();
             } else {
-                // Открываем панель → создаём заново
                 this._openPanel();
             }
         },
@@ -429,7 +426,6 @@
             
             if (taskbar) {
                 taskbar.classList.add('hidden');
-                // Удаляем иконки
                 taskbar.innerHTML = '';
             }
             
@@ -439,10 +435,8 @@
                 flag.querySelector('.flag-tooltip').textContent = 'Показать панель';
             }
             
-            // Закрываем все окна
             this.closeAllPlugins();
             
-            // Очищаем окна
             if (this._windows) {
                 this._windows.innerHTML = '';
             }
@@ -458,9 +452,8 @@
             
             this._isPanelVisible = false;
             this._setPanelState(false);
-            this._isLoaded = false;
             
-            console.log('🔷 Panel Core: Панель закрыта, данные очищены');
+            console.log('🔷 Panel Core: Панель закрыта');
         },
 
         _openPanel: function() {
@@ -479,8 +472,6 @@
             
             this._isPanelVisible = true;
             this._setPanelState(true);
-            
-            // Загружаем плагины заново
             this.loadPluginsFromVersion();
             
             console.log('🔷 Panel Core: Панель открыта');
@@ -509,39 +500,8 @@
         },
 
         // ============================================================
-        // Публичные методы для плагинов
+        // Публичные методы (только для обновления badge)
         // ============================================================
-
-        registerPlugin: function(pluginId, module) {
-            if (this._plugins[pluginId]) {
-                console.warn(`⚠️ Panel Core: Плагин "${pluginId}" уже зарегистрирован`);
-                return;
-            }
-
-            if (!module || typeof module.onOpen !== 'function') {
-                console.warn(`⚠️ Panel Core: Плагин "${pluginId}" не содержит onOpen функцию`);
-                return;
-            }
-
-            this._plugins[pluginId] = {
-                id: pluginId,
-                name: module.name || pluginId,
-                icon: module.icon || '🔌',
-                badge: 0,
-                priority: module.priority || 10,
-                onOpen: module.onOpen,
-                onClose: module.onClose || null,
-                _cleanup: module._cleanup || null,
-                _windowElement: null,
-                _iconElement: null,
-                _loaded: true
-            };
-
-            console.log(`✅ Panel Core: Плагин "${module.name || pluginId}" (${pluginId}) зарегистрирован`);
-            
-            // Добавляем иконку
-            this._addIconToTaskbar(pluginId);
-        },
 
         updateBadge: function(pluginId, count) {
             const plugin = this._plugins[pluginId];
@@ -549,6 +509,10 @@
             plugin.badge = count || 0;
             this._updateIconBadge(pluginId);
         },
+
+        // ============================================================
+        // Внутренние методы
+        // ============================================================
 
         openPlugin: function(pluginId) {
             if (!this._isPanelVisible) {
@@ -638,10 +602,6 @@
             this._openPluginId = null;
         },
 
-        isOpen: function(pluginId) {
-            return this._openPluginId === pluginId;
-        },
-
         // ============================================================
         // Загрузка плагинов
         // ============================================================
@@ -694,8 +654,6 @@
                                 }
 
                                 console.log(`📥 Panel Core: Загрузка плагина "${pluginConfig.name}" (${pluginConfig.id})`);
-                                console.log(`   Маршруты: ${pluginConfig.routes ? pluginConfig.routes.join(', ') : 'все страницы'}`);
-                                
                                 this._loadPlugin(pluginConfig);
                             });
                         }
@@ -712,14 +670,13 @@
 
         _loadPlugin: function(pluginConfig) {
             const pluginId = pluginConfig.id;
-            const pluginName = pluginConfig.name;
 
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: pluginConfig.downloadURL,
                 onload: function(response) {
                     if (response.status !== 200) {
-                        console.error(`❌ Panel Core: Не удалось загрузить ${pluginName} (${response.status})`);
+                        console.error(`❌ Panel Core: Не удалось загрузить ${pluginConfig.name} (${response.status})`);
                         return;
                     }
 
@@ -730,16 +687,61 @@
                         document.head.appendChild(script);
                         document.head.removeChild(script);
 
-                        console.log(`✅ Panel Core: Плагин "${pluginName}" загружен`);
+                        console.log(`✅ Panel Core: Плагин "${pluginConfig.name}" загружен`);
+
+                        // Проверяем, определил ли плагин __plugin_definition
+                        if (typeof window.__plugin_definition !== 'undefined') {
+                            const def = window.__plugin_definition;
+                            this._addPlugin(pluginId, def);
+                            delete window.__plugin_definition;
+                        } else {
+                            console.warn(`⚠️ Panel Core: Плагин "${pluginConfig.name}" не определил __plugin_definition`);
+                            // Создаём заглушку
+                            this._addPlugin(pluginId, {
+                                name: pluginConfig.name,
+                                icon: pluginConfig.icon || '🔌',
+                                onOpen: function(container) {
+                                    container.innerHTML = `
+                                        <div style="padding:20px;text-align:center;color:#999;">
+                                            <div style="font-size:48px;margin-bottom:16px;">${pluginConfig.icon || '🔌'}</div>
+                                            <h3>${pluginConfig.name}</h3>
+                                            <p style="font-size:13px;">Плагин не определил onOpen функцию</p>
+                                            <p style="font-size:11px;color:#ccc;margin-top:8px;">Проверьте, что плагин определяет window.__plugin_definition</p>
+                                        </div>
+                                    `;
+                                }
+                            });
+                        }
 
                     } catch (e) {
-                        console.error(`❌ Panel Core: Ошибка выполнения ${pluginName}:`, e);
+                        console.error(`❌ Panel Core: Ошибка выполнения ${pluginConfig.name}:`, e);
                     }
                 }.bind(this),
                 onerror: function() {
-                    console.error(`❌ Panel Core: Ошибка загрузки ${pluginName}`);
+                    console.error(`❌ Panel Core: Ошибка загрузки ${pluginConfig.name}`);
                 }
             });
+        },
+
+        _addPlugin: function(pluginId, def) {
+            if (this._plugins[pluginId]) return;
+
+            this._plugins[pluginId] = {
+                id: pluginId,
+                name: def.name || pluginId,
+                icon: def.icon || '🔌',
+                badge: 0,
+                priority: def.priority || 10,
+                onOpen: def.onOpen || null,
+                onClose: def.onClose || null,
+                _cleanup: def._cleanup || null,
+                _windowElement: null,
+                _iconElement: null,
+                _loaded: true
+            };
+
+            console.log(`✅ Panel Core: Плагин "${def.name || pluginId}" (${pluginId}) добавлен`);
+            this._addIconToTaskbar(pluginId);
         },
 
         // ============================================================
