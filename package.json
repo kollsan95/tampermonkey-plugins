@@ -1,0 +1,30 @@
+{
+  "name": "tampermonkey-plugins",
+  "version": "1.0.0",
+  "description": "Универсальная панель управления для Tampermonkey с системой плагинов",
+  "author": "kollsan95",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kollsan95/tampermonkey-plugins.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kollsan95/tampermonkey-plugins/issues"
+  },
+  "homepage": "https://github.com/kollsan95/tampermonkey-plugins#readme",
+  "keywords": [
+    "tampermonkey",
+    "userscript",
+    "plugins",
+    "panel",
+    "taskbar"
+  ],
+  "scripts": {
+    "version:patch": "npm version patch && git push && git push --tags",
+    "version:minor": "npm version minor && git push && git push --tags",
+    "version:major": "npm version major && git push && git push --tags"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

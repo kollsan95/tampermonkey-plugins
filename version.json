@@ -1,0 +1,44 @@
+{
+  "core": {
+    "version": "1.0.0",
+    "name": "Panel Core",
+    "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/panel-core.user.js",
+    "changelog": "Первоначальный выпуск"
+  },
+  "plugins": [
+    {
+      "id": "zones-plugin",
+      "name": "Зоны зала",
+      "version": "1.0.0",
+      "icon": "🎫",
+      "description": "Отображение зон на карте зала",
+      "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/zones-plugin.js",
+      "enabled": true,
+      "author": "kollsan95",
+      "changelog": "Первый релиз плагина"
+    },
+    {
+      "id": "example-plugin",
+      "name": "Пример плагина",
+      "version": "1.0.0",
+      "icon": "🔌",
+      "description": "Шаблон для создания новых плагинов",
+      "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/example-plugin.js",
+      "enabled": true,
+      "author": "kollsan95",
+      "changelog": "Шаблон для разработчиков"
+    },
+    {
+      "id": "my-new-plugin",                              
+      "name": "Мой новый плагин",                         
+      "version": "1.0.0",                                
+      "icon": "🚀",                                      
+      "description": "Краткое описание плагина",          
+      "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/my-new-plugin.js",
+      "enabled": true,                                   
+      "author": "YourName",                              
+      "changelog": "Первый релиз"                        
+    }
+  ],
+  "lastUpdate": "2024-01-15T12:00:00Z"
+}

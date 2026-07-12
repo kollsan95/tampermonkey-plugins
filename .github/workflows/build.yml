@@ -1,0 +1,89 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'core/**'
+      - 'plugins/**'
+      - 'version.json'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      # Получаем версию из version.json
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(cat version.json | jq -r '.core.version')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📌 Версия ядра: $VERSION"
+
+      # Обновляем версию в скриптах
+      - name: Update version in scripts
+        run: |
+          # Обновляем core
+          sed -i "s/@version.*/@version      ${{ steps.version.outputs.version }}/" core/panel-core.js
+          
+          # Обновляем плагины из version.json
+          for plugin in $(cat version.json | jq -r '.plugins[].id'); do
+            VERSION=$(cat version.json | jq -r ".plugins[] | select(.id==\"$plugin\") | .version")
+            if [ -f "plugins/${plugin}.js" ]; then
+              sed -i "s/@version.*/@version      $VERSION/" "plugins/${plugin}.js"
+              echo "✅ $plugin: $VERSION"
+            fi
+          done
+
+      # Сборка
+      - name: Build
+        run: |
+          mkdir -p dist/plugins
+          
+          # Копируем core
+          cp core/panel-core.js dist/panel-core.user.js
+          
+          # Копируем плагины
+          for plugin in plugins/*.js; do
+            if [ -f "$plugin" ]; then
+              cp "$plugin" dist/plugins/
+              echo "✅ $(basename $plugin)"
+            fi
+          done
+          
+          # Копируем version.json
+          cp version.json dist/version.json
+          
+          echo "✅ Сборка завершена"
+
+      # Деплой на GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: "Deploy v${{ steps.version.outputs.version }}"
+
+      # Создаём Release
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            dist/panel-core.user.js
+            dist/plugins/*.js
+            dist/version.json
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
