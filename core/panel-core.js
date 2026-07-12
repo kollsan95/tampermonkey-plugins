@@ -602,7 +602,7 @@
                 this._updateTaskbar();
             }
         },
-        
+
         loadPluginsFromVersion: function() {
             if (!this._isPanelVisible) {
                 console.log('⏸️ Panel Core: Панель скрыта');
@@ -710,7 +710,7 @@
                             onClose: null,
                             _windowElement: null,
                             _iconElement: null,
-                            _loaded: true,
+                            _loaded: false,
                             priority: pluginConfig.priority || 10
                         };
 
@@ -721,26 +721,40 @@
                         script.textContent = `
                             (function() {
                                 try {
-                                    // Выполняем код плагина
                                     ${response.responseText}
                                     
-                                    // Если плагин определил window.__plugin_module
-                                    if (typeof window.__plugin_module !== 'undefined' && window.__plugin_module !== null) {
-                                        if (typeof PanelCore !== 'undefined') {
-                                            const module = window.__plugin_module;
-                                            const plugin = PanelCore._plugins['${pluginConfig.id}'];
-                                            if (plugin) {
-                                                if (typeof module.onOpen === 'function') {
-                                                    plugin.onOpen = module.onOpen;
-                                                }
-                                                if (typeof module.onClose === 'function') {
-                                                    plugin.onClose = module.onClose;
-                                                }
-                                                if (module.icon) plugin.icon = module.icon;
-                                                if (module.name) plugin.name = module.name;
-                                                console.log('✅ Panel Core: Плагин "${pluginConfig.name}" зарегистрирован');
-                                                PanelCore._updateTaskbar();
+                                    // Если плагин определил __plugin_result
+                                    if (typeof window.__plugin_result !== 'undefined') {
+                                        const result = window.__plugin_result;
+                                        const plugin = PanelCore._plugins['${pluginConfig.id}'];
+                                        if (plugin) {
+                                            if (typeof result.onOpen === 'function') {
+                                                plugin.onOpen = result.onOpen;
                                             }
+                                            if (typeof result.onClose === 'function') {
+                                                plugin.onClose = result.onClose;
+                                            }
+                                            if (result.icon) plugin.icon = result.icon;
+                                            if (result.name) plugin.name = result.name;
+                                            plugin._loaded = true;
+                                            console.log('✅ Panel Core: Плагин "${pluginConfig.name}" зарегистрирован');
+                                            PanelCore._updateTaskbar();
+                                        }
+                                    } else {
+                                        console.warn('⚠️ Panel Core: Плагин "${pluginConfig.name}" не определил __plugin_result');
+                                        const plugin = PanelCore._plugins['${pluginConfig.id}'];
+                                        if (plugin) {
+                                            plugin._loaded = true;
+                                            plugin.onOpen = function(container) {
+                                                container.innerHTML = \`
+                                                    <div style="padding:20px;text-align:center;color:#999;">
+                                                        <div style="font-size:48px;margin-bottom:16px;">\${plugin.icon || '🔌'}</div>
+                                                        <h3>\${plugin.name || 'Плагин'}</h3>
+                                                        <p style="font-size:13px;">Плагин не содержит onOpen функцию</p>
+                                                    </div>
+                                                \`;
+                                            };
+                                            PanelCore._updateTaskbar();
                                         }
                                     }
                                 } catch(e) {

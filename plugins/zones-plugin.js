@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Zones Plugin - Анализ зон
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.8
+// @version      1.0.10
 // @description  Анализ зон карты зала: поиск сломанных зон в секторе
 // @author       kollsan95
 // @grant        GM_xmlhttpRequest
@@ -17,36 +17,7 @@
     const PLUGIN_ID = 'zones-plugin';
 
     // ============================================================
-    // 1. ОЖИДАНИЕ ГОТОВНОСТИ CORE
-    // ============================================================
-
-    function waitForCore(callback) {
-        // Проверяем сразу
-        if (typeof PanelCore !== 'undefined' && typeof PanelCore._registerPluginResult === 'function') {
-            callback();
-            return;
-        }
-
-        // Ждём с интервалом
-        let attempts = 0;
-        const maxAttempts = 3; // 3 * 1с = 3 секунд
-
-        const interval = setInterval(function() {
-            attempts++;
-            if (typeof PanelCore !== 'undefined' && typeof PanelCore._registerPluginResult === 'function') {
-                clearInterval(interval);
-                callback();
-                return;
-            }
-            if (attempts >= maxAttempts) {
-                clearInterval(interval);
-                console.error('❌ Zones Plugin: Core не найден после ' + maxAttempts + ' попыток');
-            }
-        }, 1000);
-    }
-
-    // ============================================================
-    // 2. ЛОГИКА ПЛАГИНА
+    // 1. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
     // ============================================================
 
     function getSessionId() {
@@ -107,12 +78,16 @@
 
     let wasOpenedAfterBrokenFound = false;
 
+    // ============================================================
+    // 2. ЛОГИКА ЗАГРУЗКИ ДАННЫХ
+    // ============================================================
+
     function loadData(container) {
         const sessionId = getSessionId();
         const sectionId = getSectionId();
 
         if (!sessionId || !sectionId) {
-            container.innerHTML = `<div style="color:#999;padding:20px;">❌ Данные не найдены: sessionId=${sessionId}, sectionId=${sectionId}</div>`;
+            container.innerHTML = `<div style="color:#999;padding:20px;">❌ Данные не найдены</div>`;
             return;
         }
 
@@ -149,6 +124,10 @@
         });
     }
 
+    // ============================================================
+    // 3. ОТОБРАЖЕНИЕ ДАННЫХ
+    // ============================================================
+
     function renderData(container, mapData, sessionData) {
         if (!mapData || !mapData.data || !sessionData || !sessionData.zones) {
             container.innerHTML = `<div style="color:#d32f2f;padding:20px;">❌ Нет данных</div>`;
@@ -174,12 +153,11 @@
         const allPlaces = data.filter(item => item[idx.type] === '0');
         const brokenZones = allPlaces.filter(item => item[idx.zoneId] === 0 && !item[idx.available]);
 
-        if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
-            if (typeof PanelCore !== 'undefined') {
+        // Обновляем badge через Core
+        if (typeof PanelCore !== 'undefined') {
+            if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
                 PanelCore.updateBadge(PLUGIN_ID, 1);
-            }
-        } else if (brokenZones.length === 0) {
-            if (typeof PanelCore !== 'undefined') {
+            } else if (brokenZones.length === 0) {
                 PanelCore.updateBadge(PLUGIN_ID, 0);
             }
         }
@@ -321,19 +299,19 @@
     }
 
     // ============================================================
-    // 3. РЕГИСТРАЦИЯ В CORE
+    // 4. ВОЗВРАЩАЕМ РЕЗУЛЬТАТ ДЛЯ CORE
     // ============================================================
 
-    waitForCore(function() {
-        PanelCore._registerPluginResult(PLUGIN_ID, {
-            onOpen: function(container) {
-                loadData(container);
-            },
-            onClose: function() {
-                console.log('🎫 Zones Plugin: Закрыт');
-            }
-        });
-        console.log('✅ Zones Plugin: Зарегистрирован в Core');
-    });
+    // Просто определяем глобальный объект, который Core подхватит
+    window.__plugin_result = {
+        onOpen: function(container) {
+            loadData(container);
+        },
+        onClose: function() {
+            console.log('🎫 Zones Plugin: Закрыт');
+        }
+    };
+
+    console.log('✅ Zones Plugin: __plugin_result определён');
 
 })();
