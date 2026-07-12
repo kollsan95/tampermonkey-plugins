@@ -680,40 +680,26 @@
                         };
 
                         // Выполняем код плагина
-                        const scriptContent = response.responseText;
                         const script = document.createElement('script');
-                        script.textContent = `
-                            (function() {
-                                try {
-                                    ${scriptContent}
-                                } catch(e) {
-                                    console.error('❌ Panel Core: Ошибка выполнения ${pluginName}:', e);
-                                }
-                            })();
-                        `;
+                        script.textContent = response.responseText;
                         document.head.appendChild(script);
                         document.head.removeChild(script);
 
                         console.log(`✅ Panel Core: Плагин "${pluginName}" загружен`);
 
-                        // Проверяем, определил ли плагин __plugin_result
-                        if (typeof window.__plugin_result !== 'undefined') {
-                            const result = window.__plugin_result;
+                        // Проверяем __plugin_result
+                        const result = window.__plugin_result;
+                        if (result && typeof result.onOpen === 'function') {
                             const plugin = this._plugins[pluginId];
                             if (plugin) {
-                                if (typeof result.onOpen === 'function') {
-                                    plugin.onOpen = result.onOpen;
-                                }
-                                if (typeof result.onClose === 'function') {
-                                    plugin.onClose = result.onClose;
-                                }
+                                plugin.onOpen = result.onOpen;
+                                plugin.onClose = result.onClose || null;
                                 if (result.icon) plugin.icon = result.icon;
                                 if (result.name) plugin.name = result.name;
                                 plugin._loaded = true;
-                                console.log(`✅ Panel Core: Плагин "${pluginName}" зарегистрирован (__plugin_result)`);
+                                console.log(`✅ Panel Core: Плагин "${pluginName}" зарегистрирован`);
                                 this._updateTaskbar();
                             }
-                            // Очищаем глобальный объект
                             delete window.__plugin_result;
                         } else {
                             console.warn(`⚠️ Panel Core: Плагин "${pluginName}" не определил __plugin_result`);
