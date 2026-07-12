@@ -120,7 +120,7 @@
             position: fixed !important;
             top: 10% !important;
             right: 0 !important;
-            max-width: 6% !important;
+            max-width: 10% !important;
             height: 67% !important;
             backdrop-filter: blur(10px) !important;
             -webkit-backdrop-filter: blur(10px) !important;
@@ -381,7 +381,7 @@
         /* ===== АДАПТИВ ===== */
         @media (max-width: 768px) {
             #panelTaskbar {
-                max-width: 6% !important;
+                max-width: 10% !important;
             }
             .taskbar-icon {
                 font-size: 14px !important;
@@ -410,7 +410,7 @@
 
         @media (max-width: 480px) {
             #panelTaskbar {
-                max-width: 6% !important;
+                max-width: 10% !important;
                 gap: 3px !important;
             }
             .taskbar-icon {
