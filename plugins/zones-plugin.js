@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Zones Plugin - Анализ зон
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.7
+// @version      1.0.8
 // @description  Анализ зон карты зала: поиск сломанных зон в секторе
 // @author       kollsan95
 // @grant        GM_xmlhttpRequest
@@ -16,15 +16,46 @@
 
     const PLUGIN_ID = 'zones-plugin';
 
+    // ============================================================
+    // 1. ОЖИДАНИЕ ГОТОВНОСТИ CORE
+    // ============================================================
+
+    function waitForCore(callback) {
+        // Проверяем сразу
+        if (typeof PanelCore !== 'undefined' && typeof PanelCore._registerPluginResult === 'function') {
+            callback();
+            return;
+        }
+
+        // Ждём с интервалом
+        let attempts = 0;
+        const maxAttempts = 3; // 3 * 1с = 3 секунд
+
+        const interval = setInterval(function() {
+            attempts++;
+            if (typeof PanelCore !== 'undefined' && typeof PanelCore._registerPluginResult === 'function') {
+                clearInterval(interval);
+                callback();
+                return;
+            }
+            if (attempts >= maxAttempts) {
+                clearInterval(interval);
+                console.error('❌ Zones Plugin: Core не найден после ' + maxAttempts + ' попыток');
+            }
+        }, 1000);
+    }
+
+    // ============================================================
+    // 2. ЛОГИКА ПЛАГИНА
+    // ============================================================
+
     function getSessionId() {
         const match = window.location.hash.match(/\/session\/(\d+)/);
-        console.log('🔍 getSessionId match:', match);
         return match ? match[1] : null;
     }
 
     function getSectionId() {
         const match = window.location.hash.match(/\/section\/(\d+)/);
-        console.log('🔍 getSectionId match:', match);
         return match ? match[1] : null;
     }
 
@@ -37,19 +68,15 @@
         for (let cookie of cookies) {
             const [name, value] = cookie.trim().split('=');
             if (name === 'token' || name === 'access_token' || name === 'auth_token') {
-                console.log('🔑 Токен найден в куках');
                 return value;
             }
         }
         try {
-            const token = localStorage.getItem('token') || 
+            return localStorage.getItem('token') || 
                    localStorage.getItem('access_token') || 
                    sessionStorage.getItem('token') ||
                    sessionStorage.getItem('access_token');
-            if (token) console.log('🔑 Токен найден в storage');
-            return token;
         } catch (e) {
-            console.warn('⚠️ Не удалось прочитать storage:', e);
             return null;
         }
     }
@@ -57,12 +84,10 @@
     function makeRequest(url, callback) {
         const token = getToken();
         if (!token) {
-            console.error('❌ Нет токена для авторизации');
             callback({ status: 401 });
             return;
         }
 
-        console.log('📡 Запрос к API:', url);
         GM_xmlhttpRequest({
             method: 'GET',
             url: url,
@@ -72,11 +97,9 @@
                 'Accept': 'application/json'
             },
             onload: function(response) {
-                console.log('📥 Ответ получен, статус:', response.status);
                 callback(response);
             },
             onerror: function(error) {
-                console.error('❌ Ошибка запроса:', error);
                 callback({ status: 0, error: error });
             }
         });
@@ -87,8 +110,6 @@
     function loadData(container) {
         const sessionId = getSessionId();
         const sectionId = getSectionId();
-
-        console.log('📊 Загрузка данных: sessionId=' + sessionId + ', sectionId=' + sectionId);
 
         if (!sessionId || !sectionId) {
             container.innerHTML = `<div style="color:#999;padding:20px;">❌ Данные не найдены: sessionId=${sessionId}, sectionId=${sectionId}</div>`;
@@ -104,60 +125,33 @@
 
         function checkDone() {
             done++;
-            console.log('📊 Проверка завершения: ' + done + '/2');
             if (done === 2) {
                 try {
                     renderData(container, mapData, sessionData);
                 } catch (e) {
-                    console.error('❌ Ошибка рендеринга:', e);
                     container.innerHTML = `<div style="color:#d32f2f;padding:20px;">❌ ${e.message}</div>`;
                 }
             }
         }
 
         makeRequest(mapUrl, function(r) {
-            console.log('📥 mapUrl ответ:', r.status);
             if (r.status === 200) {
-                try { 
-                    mapData = JSON.parse(r.responseText); 
-                    console.log('✅ Данные карты загружены, мест:', mapData.data ? mapData.data.length : 0);
-                } catch(e) {
-                    console.error('❌ Ошибка парсинга карты:', e);
-                }
-            } else {
-                console.error('❌ Ошибка mapUrl:', r.status);
+                try { mapData = JSON.parse(r.responseText); } catch(e) {}
             }
             checkDone();
         });
 
         makeRequest(sessionUrl, function(r) {
-            console.log('📥 sessionUrl ответ:', r.status);
             if (r.status === 200) {
-                try { 
-                    sessionData = JSON.parse(r.responseText); 
-                    console.log('✅ Данные сессии загружены, зон:', sessionData.zones ? sessionData.zones.length : 0);
-                } catch(e) {
-                    console.error('❌ Ошибка парсинга сессии:', e);
-                }
-            } else {
-                console.error('❌ Ошибка sessionUrl:', r.status);
+                try { sessionData = JSON.parse(r.responseText); } catch(e) {}
             }
             checkDone();
         });
     }
 
     function renderData(container, mapData, sessionData) {
-        console.log('📊 renderData вызван');
-        console.log('mapData:', mapData ? 'есть' : 'нет');
-        console.log('sessionData:', sessionData ? 'есть' : 'нет');
-
-        if (!mapData || !mapData.data) {
-            container.innerHTML = `<div style="color:#d32f2f;padding:20px;">❌ Нет данных карты: ${mapData ? 'есть mapData, но нет data' : 'mapData null'}</div>`;
-            return;
-        }
-
-        if (!sessionData || !sessionData.zones) {
-            container.innerHTML = `<div style="color:#d32f2f;padding:20px;">❌ Нет данных сессии: ${sessionData ? 'есть sessionData, но нет zones' : 'sessionData null'}</div>`;
+        if (!mapData || !mapData.data || !sessionData || !sessionData.zones) {
+            container.innerHTML = `<div style="color:#d32f2f;padding:20px;">❌ Нет данных</div>`;
             return;
         }
 
@@ -177,12 +171,8 @@
             available: schema.indexOf('available')
         };
 
-        console.log('📊 Индексы полей:', idx);
-
         const allPlaces = data.filter(item => item[idx.type] === '0');
         const brokenZones = allPlaces.filter(item => item[idx.zoneId] === 0 && !item[idx.available]);
-
-        console.log('📊 Всего мест:', allPlaces.length, 'Сломанных:', brokenZones.length);
 
         if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
             if (typeof PanelCore !== 'undefined') {
@@ -330,8 +320,11 @@
         }
     }
 
-    // Регистрируем плагин в Core
-    if (typeof PanelCore !== 'undefined' && typeof PanelCore._registerPluginResult === 'function') {
+    // ============================================================
+    // 3. РЕГИСТРАЦИЯ В CORE
+    // ============================================================
+
+    waitForCore(function() {
         PanelCore._registerPluginResult(PLUGIN_ID, {
             onOpen: function(container) {
                 loadData(container);
@@ -341,8 +334,6 @@
             }
         });
         console.log('✅ Zones Plugin: Зарегистрирован в Core');
-    } else {
-        console.error('❌ Zones Plugin: Panel Core не найден или нет метода _registerPluginResult');
-    }
+    });
 
 })();
