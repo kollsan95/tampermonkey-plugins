@@ -1,6 +1,6 @@
 {
   "core": {
-    "version": "1.0.38",
+    "version": "1.0.39",
     "name": "Panel Core",
     "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/panel-core.user.js"
   },
@@ -12,7 +12,7 @@
       "icon": "🎫",
       "description": "Анализ зон карты зала: поиск сломанных зон",
       "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/zones-plugin.js",
-      "routes": ["/session/*/map/section/*"],
+      "routes": [],
       "enabled": true,
       "author": "kollsan95",
       "priority": 10
