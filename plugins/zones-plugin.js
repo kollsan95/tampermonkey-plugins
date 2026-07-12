@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Zones Plugin - Анализ зон
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.5
-// @description  Анализ зон карты зала
+// @version      1.0.6
+// @description  Анализ зон карты зала: поиск сломанных зон в секторе
 // @author       kollsan95
 // @grant        GM_xmlhttpRequest
 // @grant        GM_notification
@@ -11,8 +11,7 @@
 // @run-at       document-end
 // ==/UserScript//
 
-// Плагин определяет модуль, который будет использован Core
-window.__plugin_module = (function() {
+(function() {
     'use strict';
 
     const PLUGIN_ID = 'zones-plugin';
@@ -287,14 +286,18 @@ window.__plugin_module = (function() {
         }
     }
 
-    // Возвращаем модуль для Core
-    return {
-        onOpen: function(container) {
-            loadData(container);
-        },
-        onClose: function() {
-            console.log('🎫 Zones Plugin: Закрыт');
-        }
-    };
+    // ★★★ ГЛАВНОЕ: передаём результат в Core ★★★
+    if (typeof PanelCore !== 'undefined' && typeof PanelCore._registerPluginResult === 'function') {
+        PanelCore._registerPluginResult(PLUGIN_ID, {
+            onOpen: function(container) {
+                loadData(container);
+            },
+            onClose: function() {
+                console.log('🎫 Zones Plugin: Закрыт');
+            }
+        });
+    } else {
+        console.error('❌ Zones Plugin: Panel Core не найден или нет метода _registerPluginResult');
+    }
 
 })();

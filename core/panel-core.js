@@ -569,7 +569,40 @@
         // ============================================================
         // Загрузка плагинов
         // ============================================================
+        _registerPluginResult: function(pluginId, module) {
+            const plugin = this._plugins[pluginId];
+            if (!plugin) {
+                console.warn(`⚠️ Panel Core: Плагин "${pluginId}" не найден`);
+                return;
+            }
 
+            if (module && typeof module.onOpen === 'function') {
+                plugin.onOpen = module.onOpen;
+                plugin.onClose = module.onClose || null;
+                plugin._loaded = true;
+                plugin._isLoading = false;
+                if (module.icon) plugin.icon = module.icon;
+                if (module.name) plugin.name = module.name;
+                
+                console.log(`✅ Panel Core: Плагин "${plugin.name}" (${pluginId}) зарегистрирован`);
+                this._updateTaskbar();
+            } else {
+                console.warn(`⚠️ Panel Core: Плагин "${pluginId}" не вернул onOpen функцию`);
+                plugin._loaded = true;
+                plugin._isLoading = false;
+                plugin.onOpen = function(container) {
+                    container.innerHTML = `
+                        <div style="padding:20px;text-align:center;color:#999;">
+                            <div style="font-size:48px;margin-bottom:16px;">${plugin.icon || '🔌'}</div>
+                            <h3>${plugin.name || 'Плагин'}</h3>
+                            <p style="font-size:13px;">Плагин не содержит onOpen функцию</p>
+                        </div>
+                    `;
+                };
+                this._updateTaskbar();
+            }
+        },
+        
         loadPluginsFromVersion: function() {
             if (!this._isPanelVisible) {
                 console.log('⏸️ Panel Core: Панель скрыта');
