@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Panel Core - Универсальная панель управления
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.0
-// @description  Ядро панели управления. Загружает плагины из version.json с уведомлениями
+// @version      1.0.21
+// @description  Ядро панели управления с маршрутизацией ярлыков
 // @author       kollsan95
 // @match        *://*/*
 // @grant        GM_addStyle
@@ -16,6 +16,12 @@
 // @downloadURL  https://kollsan95.github.io/tampermonkey-plugins/panel-core.user.js
 // ==/UserScript==
 
+/**
+ * ============================================================
+ *  PANEL CORE - Универсальная панель управления
+ * ============================================================
+**/
+
 (function() {
     'use strict';
 
@@ -26,427 +32,386 @@
     // ============================================================
     const CONFIG = {
         VERSION_URL: 'https://kollsan95.github.io/tampermonkey-plugins/version.json',
-        CHECK_INTERVAL: 86400000,
+        CHECK_INTERVAL: 3600000, // 1 час
         STORAGE_KEY: 'panel_plugins_cache',
         NOTIFICATIONS_KEY: 'panel_notifications_seen',
-        NOTIFICATION_DURATION: 8000,
-        PANEL_STATE_KEY: 'panel_visible_state'
+        NOTIFICATION_DURATION: 8000
     };
 
     // ============================================================
     // 2. СТИЛИ
     // ============================================================
     GM_addStyle(`
-        /* ===== КНОПКА-ФЛАЖОК (всегда видна) ===== */
-        #panel-toggle-flag {
-            position: fixed !important;
-            bottom: 20% !important;
-            right: 0 !important;
-            height: 3% !important;
-            min-height: 30px !important;
-            border: none !important;
-            border-radius: 8px 0 0 8px !important;
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(8px) !important;
-            -webkit-backdrop-filter: blur(8px) !important;
-            color: #1a1a1a !important;
-            font-size: 14px !important;
-            cursor: pointer !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            z-index: 1000000 !important;
-            box-shadow: -2px 0 12px rgba(0, 0, 0, 0.08) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            border-right: none !important;
-            user-select: none !important;
-        }
-
-        #panel-toggle-flag:hover {
-            background: rgba(255, 255, 255, 1) !important;
-            transform: scale(1.05) !important;
-            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.12) !important;
-        }
-
-        #panel-toggle-flag.active {
-            background: rgba(0, 122, 255, 0.12) !important;
-            color: #007aff !important;
-        }
-
-        #panel-toggle-flag .flag-icon {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            transition: transform 0.3s !important;
-            font-size: 16px !important;
-            line-height: 1 !important;
-        }
-
-        #panel-toggle-flag .flag-tooltip {
-            position: absolute !important;
-            right: calc(100% + 12px) !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            background: rgba(0, 0, 0, 0.85) !important;
-            color: white !important;
-            padding: 4px 12px !important;
-            border-radius: 6px !important;
-            font-size: 12px !important;
-            white-space: nowrap !important;
-            pointer-events: none !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
-            transition: all 0.2s !important;
-        }
-
-        #panel-toggle-flag:hover .flag-tooltip {
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-
-        #panel-toggle-flag .flag-tooltip::after {
-            content: '' !important;
-            position: absolute !important;
-            left: 100% !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            border: 5px solid transparent !important;
-            border-left-color: rgba(0, 0, 0, 0.85) !important;
-        }
-
-        /* ===== ПАНЕЛЬ (показывается/скрывается) ===== */
+        /* ===== ПАНЕЛЬ ЗАДАЧ ===== */
         #panelTaskbar {
-            position: fixed !important;
-            top: 10% !important;
-            right: 0 !important;
-            max-width: 10% !important;
-            height: 67% !important;
-            backdrop-filter: blur(10px) !important;
-            -webkit-backdrop-filter: blur(10px) !important;
-            z-index: 999999 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            gap: 4px !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s !important;
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 48px;
+            height: 100vh;
+            z-index: 9998;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 0;
+            background: rgba(30, 30, 40, 0.92);
+            backdrop-filter: blur(10px);
+            box-shadow: -2px 0 15px rgba(0,0,0,0.15);
+            box-sizing: border-box;
+            overflow-y: auto;
+            transition: background 0.3s ease;
         }
-
-        #panelTaskbar.hidden {
-            transform: translateX(100%) !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-
-        #panelTaskbar.has-window-open {
-            background: rgba(235, 235, 237, 0) !important;
-        }
-
         #panelTaskbar::-webkit-scrollbar {
-            width: 3px !important;
+            width: 2px;
+        }
+        #panelTaskbar::-webkit-scrollbar-track {
+            background: transparent;
         }
         #panelTaskbar::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.15) !important;
-            border-radius: 10px !important;
+            background: rgba(255,255,255,0.15);
+            border-radius: 2px;
         }
 
-        .taskbar-icon {
-            border: none !important;
-            border-radius: 50% !important;
-            background: rgba(0, 0, 0, 0.04) !important;
-            color: #1a1a1a !important;
-            font-size: 16px !important;
-            cursor: pointer !important;
-            transition: all 0.2s !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            position: relative !important;
-            padding: 0 !important;
-            flex-shrink: 0 !important;
+        #panelTaskbar .taskbar-divider {
+            width: 28px;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+            margin: 3px 0;
         }
 
-        .taskbar-icon:hover {
-            background: rgba(0, 0, 0, 0.08) !important;
-            transform: scale(1.08) !important;
+        #panelTaskbar .taskbar-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.6);
+            transition: all 0.2s ease;
+            position: relative;
+            flex-shrink: 0;
+            margin-bottom: 2px;
+        }
+        #panelTaskbar .taskbar-icon:hover {
+            background: rgba(255,255,255,0.14);
+            color: #fff;
+            transform: scale(1.04);
+        }
+        #panelTaskbar .taskbar-icon.active {
+            background: #4CAF50;
+            color: #fff;
+            box-shadow: 0 2px 12px rgba(76, 175, 80, 0.35);
+        }
+        #panelTaskbar .taskbar-icon.active:hover {
+            background: #43A047;
         }
 
-        .taskbar-icon.active {
-            background: white !important;
-            color: #1a1a1a !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-            transform: scale(1.05) !important;
-            border-radius: 0 20px 20px 0 !important;
+        #panelTaskbar .taskbar-icon .badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: #f44336;
+            color: #fff;
+            font-size: 9px;
+            font-weight: bold;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            border: 2px solid rgba(30, 30, 40, 0.92);
+            pointer-events: none;
+            transition: transform 0.2s ease;
+        }
+        #panelTaskbar .taskbar-icon .badge.hidden {
+            display: none;
+        }
+        #panelTaskbar .taskbar-icon .badge.pulse {
+            animation: badgePulse 0.6s ease 2;
+        }
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
         }
 
-        /* Tooltip для иконок */
-        .taskbar-icon .tooltip {
-            position: absolute !important;
-            right: calc(100% + 12px) !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            background: rgba(0, 0, 0, 0.85) !important;
-            color: white !important;
-            padding: 4px 12px !important;
-            border-radius: 6px !important;
-            font-size: 12px !important;
-            white-space: nowrap !important;
-            pointer-events: none !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
-            transition: all 0.2s !important;
+        #panelTaskbar .taskbar-icon .tooltip {
+            position: absolute;
+            right: 48px;
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        #panelTaskbar .taskbar-icon .tooltip::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 6px solid transparent;
+            border-left-color: rgba(0,0,0,0.85);
+        }
+        #panelTaskbar .taskbar-icon:hover .tooltip {
+            opacity: 1;
         }
 
-        .taskbar-icon:hover .tooltip {
-            opacity: 1 !important;
-            visibility: visible !important;
+        #panelTaskbar .taskbar-icon .update-indicator {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4CAF50;
+            border: 2px solid rgba(30, 30, 40, 0.92);
+            display: none;
+            animation: indicatorPulse 1.5s ease infinite;
+        }
+        #panelTaskbar .taskbar-icon .update-indicator.show {
+            display: block;
+        }
+        @keyframes indicatorPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
         }
 
-        .taskbar-icon .tooltip::after {
-            content: '' !important;
-            position: absolute !important;
-            left: 100% !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-            border: 5px solid transparent !important;
-            border-left-color: rgba(0, 0, 0, 0.85) !important;
-        }
-
-        /* Badge */
-        .taskbar-icon .badge {
-            position: absolute !important;
-            top: -4px !important;
-            right: -4px !important;
-            background: #ff3b30 !important;
-            color: white !important;
-            font-size: 9px !important;
-            font-weight: 600 !important;
-            min-width: 16px !important;
-            height: 16px !important;
-            padding: 0 4px !important;
-            border-radius: 10px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            border: 2px solid rgba(255, 255, 255, 0.95) !important;
-        }
-
-        .taskbar-icon .badge.hidden {
-            display: none !important;
-        }
-
-        /* ===== ОКНО ПЛАГИНА ===== */
+        /* ===== КОНТЕЙНЕР ОКОН ПЛАГИНОВ ===== */
         #panelWindows {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            pointer-events: none !important;
-            z-index: 999998 !important;
+            position: fixed;
+            top: 0;
+            right: 48px;
+            width: 22vw;
+            min-width: 280px;
+            max-width: 480px;
+            height: 100vh;
+            z-index: 9999;
+            pointer-events: none;
+            overflow: hidden;
         }
-
-        .plugin-window {
-            position: fixed !important;
-            top: 10% !important;
+        #panelWindows .plugin-window {
+            position: absolute;
+            top: 0;
             right: 0;
-            width: 30vw !important;
-            min-width: 280px !important;
-            max-width: 500px !important;
-            height: 67% !important;
-            background: white !important;
-            border-radius: 20px 0 0 20px !important;
-            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.12) !important;
-            pointer-events: auto !important;
-            transform: translateX(calc(30vw + 20px)) !important;
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            display: flex !important;
-            flex-direction: column !important;
-            overflow: hidden !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            border-right: none !important;
-            opacity: 0 !important;
-            visibility: hidden !important;
-            padding-right: 3%;
+            width: 100%;
+            height: 100%;
+            background: #f5f5f5;
+            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+            box-sizing: border-box;
+            padding: 16px 20px;
+            overflow-y: auto;
+            transform: translateX(calc(100% + 48px));
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            box-shadow: -4px 0 25px rgba(0,0,0,0.1);
         }
-
-        .plugin-window.open {
-            transform: translateX(0) !important;
-            opacity: 1 !important;
-            visibility: visible !important;
+        #panelWindows .plugin-window.open {
+            transform: translateX(0);
+            pointer-events: all;
         }
-
-        .plugin-window.hidden {
+        #panelWindows .plugin-window.hidden {
             display: none !important;
         }
 
-        .plugin-window .window-header {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            padding: 16px 20px !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
-            background: white !important;
-            flex-shrink: 0 !important;
-            min-height: 50px !important;
+        #panelWindows .plugin-window .window-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e8e8e8;
+            margin-bottom: 12px;
+        }
+        #panelWindows .plugin-window .window-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #222;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #panelWindows .plugin-window .window-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #999;
+            padding: 0 4px;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        #panelWindows .plugin-window .window-close:hover {
+            color: #333;
         }
 
-        .plugin-window .window-title {
-            font-weight: 600 !important;
-            font-size: 16px !important;
-            color: #1a1a1a !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 8px !important;
+        #panelWindows .plugin-window .window-content {
+            height: calc(100% - 60px);
+            overflow-y: auto;
+        }
+        #panelWindows .plugin-window .window-content::-webkit-scrollbar {
+            width: 5px;
+        }
+        #panelWindows .plugin-window .window-content::-webkit-scrollbar-track {
+            background: #e8e8e8;
+        }
+        #panelWindows .plugin-window .window-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+        #panelWindows .plugin-window .window-content::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
         }
 
-        .plugin-window .window-close {
-            display: none !important;
+        @keyframes pluginAdd {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
-
-        .plugin-window .window-content {
-            padding: 20px !important;
-            overflow-y: auto !important;
-            flex: 1 !important;
-            color: #1a1a1a !important;
-            font-size: 14px !important;
-            line-height: 1.6 !important;
-            background: white !important;
-        }
-
-        .plugin-window .window-content::-webkit-scrollbar {
-            width: 6px !important;
-        }
-        .plugin-window .window-content::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.15) !important;
-            border-radius: 10px !important;
+        #panelTaskbar .taskbar-icon.new-plugin {
+            animation: pluginAdd 0.3s ease;
         }
 
         /* ===== УВЕДОМЛЕНИЯ ===== */
         #panelNotifications {
-            position: fixed !important;
-            top: 20px !important;
-            right: 70px !important;
-            z-index: 9999999 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 10px !important;
-            max-width: 380px !important;
-            min-width: 200px !important;
-            pointer-events: none !important;
+            position: fixed;
+            bottom: 20px;
+            right: 60px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 380px;
+            pointer-events: none;
         }
-
         #panelNotifications .notification {
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(10px) !important;
-            border-radius: 12px !important;
-            padding: 14px 16px !important;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-            display: flex !important;
-            align-items: flex-start !important;
-            gap: 12px !important;
-            pointer-events: auto !important;
-            cursor: pointer !important;
-            animation: notifSlideIn 0.3s ease !important;
+            background: rgba(30, 30, 40, 0.95);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            padding: 14px 18px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            font-size: 13px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            pointer-events: all;
+            animation: notificationSlide 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 4px solid #4CAF50;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            max-width: 380px;
+        }
+        #panelNotifications .notification .notif-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        #panelNotifications .notification .notif-content {
+            flex: 1;
+            min-width: 0;
+        }
+        #panelNotifications .notification .notif-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #fff;
+        }
+        #panelNotifications .notification .notif-text {
+            color: rgba(255,255,255,0.8);
+            font-size: 13px;
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+        #panelNotifications .notification .notif-close {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.4);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 4px;
+            flex-shrink: 0;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        #panelNotifications .notification .notif-close:hover {
+            color: rgba(255,255,255,0.8);
+        }
+        #panelNotifications .notification.notif-update {
+            border-left-color: #FF9800;
+        }
+        #panelNotifications .notification.notif-new {
+            border-left-color: #4CAF50;
+        }
+        #panelNotifications .notification.notif-core {
+            border-left-color: #2196F3;
+        }
+        #panelNotifications .notification.notif-error {
+            border-left-color: #f44336;
         }
 
+        @keyframes notificationSlide {
+            0% { transform: translateX(100px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
         #panelNotifications .notification.removing {
-            animation: notifSlideOut 0.3s ease forwards !important;
+            animation: notificationRemove 0.3s ease forwards;
         }
-
-        @keyframes notifSlideIn {
-            from { opacity: 0; transform: translateX(40px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        @keyframes notifSlideOut {
-            from { opacity: 1; transform: translateX(0); }
-            to { opacity: 0; transform: translateX(40px); }
-        }
-
-        #panelNotifications .notif-icon { font-size: 24px !important; }
-        #panelNotifications .notif-title { font-weight: 600 !important; font-size: 14px !important; }
-        #panelNotifications .notif-text { font-size: 13px !important; color: #555 !important; }
-        #panelNotifications .notif-close {
-            background: none !important;
-            border: none !important;
-            color: #999 !important;
-            cursor: pointer !important;
-            font-size: 16px !important;
-        }
-
-        /* ===== АДАПТИВ ===== */
-        @media (max-width: 768px) {
-            #panelTaskbar {
-                max-width: 10% !important;
-            }
-            .taskbar-icon {
-                font-size: 14px !important;
-            }
-            .plugin-window {
-                right: 40px !important;
-                width: 70vw !important;
-                min-width: 200px !important;
-                max-width: 320px !important;
-                transform: translateX(calc(70vw + 20px)) !important;
-            }
-            #panel-toggle-flag {
-                width: 24px !important;
-                height: 36px !important;
-                min-width: 24px !important;
-                min-height: 36px !important;
-                font-size: 12px !important;
-            }
-            .taskbar-icon .tooltip {
-                display: none !important;
-            }
-            #panel-toggle-flag .flag-tooltip {
-                display: none !important;
-            }
-        }
-
-        @media (max-width: 480px) {
-            #panelTaskbar {
-                max-width: 10% !important;
-                gap: 3px !important;
-            }
-            .taskbar-icon {
-                font-size: 12px !important;
-            }
-            .plugin-window {
-                right: 36px !important;
-                width: 80vw !important;
-                min-width: 160px !important;
-                max-width: 280px !important;
-                transform: translateX(calc(80vw + 20px)) !important;
-                border-radius: 16px 0 0 16px !important;
-            }
-            .plugin-window .window-header {
-                padding: 12px 16px !important;
-                min-height: 40px !important;
-            }
-            .plugin-window .window-title {
-                font-size: 14px !important;
-            }
-            .plugin-window .window-content {
-                padding: 16px !important;
-                font-size: 13px !important;
-            }
-            #panel-toggle-flag {
-                width: 20px !important;
-                height: 32px !important;
-                min-width: 20px !important;
-                min-height: 32px !important;
-                font-size: 11px !important;
-            }
+        @keyframes notificationRemove {
+            0% { transform: translateX(0); opacity: 1; }
+            100% { transform: translateX(100px); opacity: 0; }
         }
     `);
 
     // ============================================================
-    // 3. API КОР
+    // 3. МАРШРУТИЗАТОР
+    // ============================================================
+
+    const Router = {
+        match: function(url, route) {
+            if (!route || route === '*') return true;
+            
+            const pattern = route
+                .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                .replace(/\\\*/g, '.*');
+            
+            const regex = new RegExp(`^${pattern}$`);
+            return regex.test(url);
+        },
+
+        filterByUrl: function(plugins, url) {
+            return plugins.filter(plugin => {
+                if (!plugin.routes || plugin.routes.length === 0) {
+                    return true;
+                }
+                return plugin.routes.some(route => this.match(url, route));
+            });
+        },
+
+        getActivePlugins: function(allPlugins, url) {
+            const active = {};
+            Object.keys(allPlugins).forEach(id => {
+                const plugin = allPlugins[id];
+                const routes = plugin._routes || [];
+                if (routes.length === 0 || routes.some(route => this.match(url, route))) {
+                    active[id] = plugin;
+                }
+            });
+            return active;
+        }
+    };
+
+    // ============================================================
+    // 4. API КОР
     // ============================================================
     const PanelCore = {
         _plugins: {},
@@ -455,95 +420,10 @@
         _taskbar: null,
         _windows: null,
         _notificationsContainer: null,
-        _toggleFlag: null,
         _versionCache: null,
         _checkTimer: null,
         _isInitialized: false,
-        _isPanelVisible: true,
-        _isDestroyed: false,
-
-        // ============================================================
-        // Методы управления видимостью панели
-        // ============================================================
-
-        _getPanelState: function() {
-            const hostname = window.location.hostname;
-            const storage = GM_getValue(CONFIG.PANEL_STATE_KEY, '{}');
-            try {
-                const data = JSON.parse(storage);
-                return data[hostname] !== undefined ? data[hostname] : true;
-            } catch (e) {
-                return true;
-            }
-        },
-
-        _setPanelState: function(visible) {
-            const hostname = window.location.hostname;
-            const storage = GM_getValue(CONFIG.PANEL_STATE_KEY, '{}');
-            try {
-                const data = JSON.parse(storage);
-                data[hostname] = visible;
-                GM_setValue(CONFIG.PANEL_STATE_KEY, JSON.stringify(data));
-            } catch (e) {
-                const data = {};
-                data[hostname] = visible;
-                GM_setValue(CONFIG.PANEL_STATE_KEY, JSON.stringify(data));
-            }
-        },
-
-        _togglePanel: function() {
-            const taskbar = document.getElementById('panelTaskbar');
-            const flag = document.getElementById('panel-toggle-flag');
-            if (!taskbar || !flag) return;
-
-            const isVisible = !taskbar.classList.contains('hidden');
-            
-            if (isVisible) {
-                // Скрываем панель
-                taskbar.classList.add('hidden');
-                flag.classList.remove('active');
-                flag.querySelector('.flag-icon').textContent = '◀';
-                flag.querySelector('.flag-tooltip').textContent = 'Показать панель';
-                this._isPanelVisible = false;
-                this._setPanelState(false);
-                // Закрываем все открытые окна
-                this.closeAllPlugins();
-            } else {
-                // Показываем панель
-                taskbar.classList.remove('hidden');
-                flag.classList.add('active');
-                flag.querySelector('.flag-icon').textContent = '▶';
-                flag.querySelector('.flag-tooltip').textContent = 'Скрыть панель';
-                this._isPanelVisible = true;
-                this._setPanelState(true);
-                // Загружаем плагины если их нет
-                if (Object.keys(this._plugins).length === 0) {
-                    this.loadPluginsFromVersion();
-                }
-            }
-        },
-
-        _applyPanelState: function() {
-            const taskbar = document.getElementById('panelTaskbar');
-            const flag = document.getElementById('panel-toggle-flag');
-            if (!taskbar || !flag) return;
-
-            const isVisible = this._getPanelState();
-            
-            if (isVisible) {
-                taskbar.classList.remove('hidden');
-                flag.classList.add('active');
-                flag.querySelector('.flag-icon').textContent = '▶';
-                flag.querySelector('.flag-tooltip').textContent = 'Скрыть панель';
-                this._isPanelVisible = true;
-            } else {
-                taskbar.classList.add('hidden');
-                flag.classList.remove('active');
-                flag.querySelector('.flag-icon').textContent = '◀';
-                flag.querySelector('.flag-tooltip').textContent = 'Показать панель';
-                this._isPanelVisible = false;
-            }
-        },
+        _currentUrl: window.location.pathname + window.location.hash,
 
         // ============================================================
         // Публичные методы
@@ -560,6 +440,11 @@
                 return false;
             }
 
+            const routes = plugin.routes || [];
+            if (typeof routes === 'string') {
+                plugin.routes = [routes];
+            }
+
             this._plugins[plugin.id] = {
                 id: plugin.id,
                 name: plugin.name,
@@ -573,6 +458,7 @@
                 _iconElement: null,
                 _version: plugin.version || '1.0.0',
                 _downloadURL: plugin.downloadURL || null,
+                _routes: plugin.routes || [],
                 _isNew: false,
                 _loaded: false,
                 _originalOnOpen: null,
@@ -584,17 +470,15 @@
                 return (this._plugins[a].priority || 10) - (this._plugins[b].priority || 10);
             });
 
-            // Добавляем иконку только если панель видна
-            if (this._taskbar && this._isPanelVisible) {
-                this._addIconToTaskbar(plugin.id);
-            }
+            this._updateVisibleIcons();
 
             console.log(`✅ Panel Core: Плагин "${plugin.name}" (${plugin.id}) зарегистрирован`);
+            console.log(`   Маршруты: ${routes.length > 0 ? routes.join(', ') : 'все страницы'}`);
             return true;
         },
 
-        showNotification: function(title, text, icon = '🔔', type = 'update', duration = CONFIG.NOTIFICATION_DURATION) {
-            this._showNotification(title, text, icon, type, duration);
+        showNotification: function(title, text, icon = '🔔', type = 'update', duration) {
+            this._showNotification(title, text, icon, type, duration || CONFIG.NOTIFICATION_DURATION);
         },
 
         updateBadge: function(pluginId, count) {
@@ -608,23 +492,20 @@
         },
 
         openPlugin: function(pluginId) {
-            if (!this._isPanelVisible) {
-                console.warn('⚠️ Panel Core: Панель скрыта, сначала покажите её');
-                return;
-            }
-
             const plugin = this._plugins[pluginId];
             if (!plugin) {
                 console.warn(`⚠️ Panel Core: Плагин "${pluginId}" не найден`);
                 return;
             }
 
-            if (this._openPluginId === pluginId) {
-                this.closePlugin(pluginId);
+            if (this._openPluginId === pluginId && plugin._windowElement && plugin._windowElement.classList.contains('open')) {
                 return;
             }
 
-            this.closeAllPlugins();
+            if (this._openPluginId) {
+                this.closePlugin(this._openPluginId);
+            }
+
             this._openPluginId = pluginId;
 
             if (!plugin._windowElement) {
@@ -636,11 +517,6 @@
             requestAnimationFrame(() => {
                 win.classList.add('open');
             });
-
-            const taskbar = document.getElementById('panelTaskbar');
-            if (taskbar) {
-                taskbar.classList.add('has-window-open');
-            }
 
             if (plugin._iconElement) {
                 plugin._iconElement.classList.add('active');
@@ -678,14 +554,6 @@
                 plugin._iconElement.classList.remove('active');
             }
 
-            const taskbar = document.getElementById('panelTaskbar');
-            if (taskbar) {
-                const hasActive = document.querySelector('.taskbar-icon.active');
-                if (!hasActive) {
-                    taskbar.classList.remove('has-window-open');
-                }
-            }
-
             if (typeof plugin.onClose === 'function') {
                 try {
                     plugin.onClose();
@@ -696,30 +564,6 @@
 
             this._openPluginId = null;
             console.log(`📂 Panel Core: Закрыт плагин "${plugin.name}"`);
-        },
-
-        closeAllPlugins: function() {
-            if (this._openPluginId) {
-                this.closePlugin(this._openPluginId);
-            }
-            if (this._windows) {
-                const allWindows = this._windows.querySelectorAll('.plugin-window');
-                allWindows.forEach(win => {
-                    win.classList.remove('open');
-                    win.classList.add('hidden');
-                });
-            }
-            document.querySelectorAll('.taskbar-icon.active').forEach(icon => {
-                icon.classList.remove('active');
-            });
-            const taskbar = document.getElementById('panelTaskbar');
-            if (taskbar) {
-                const hasActive = document.querySelector('.taskbar-icon.active');
-                if (!hasActive) {
-                    taskbar.classList.remove('has-window-open');
-                }
-            }
-            this._openPluginId = null;
         },
 
         isOpen: function(pluginId) {
@@ -734,16 +578,16 @@
             return this._plugins;
         },
 
+        getActivePlugins: function() {
+            const url = window.location.pathname + window.location.hash;
+            return Router.getActivePlugins(this._plugins, url);
+        },
+
         // ============================================================
         // Загрузка плагинов из version.json
         // ============================================================
 
         loadPluginsFromVersion: function() {
-            if (!this._isPanelVisible) {
-                console.log('⏸️ Panel Core: Панель скрыта, загрузка плагинов отложена');
-                return;
-            }
-
             console.log('🔍 Panel Core: Проверка обновлений...');
 
             GM_xmlhttpRequest({
@@ -784,9 +628,9 @@
                             let newPluginsCount = 0;
                             let updatedPluginsCount = 0;
                             
-                            data.plugins.forEach(pluginConfig => {
+                            data.plugins.forEach(function(pluginConfig) {
                                 if (!pluginConfig.enabled) {
-                                    console.log(`⏭️ Panel Core: Плагин "${pluginConfig.name}" отключён в конфиге`);
+                                    console.log(`⏭️ Panel Core: Плагин "${pluginConfig.name}" отключён`);
                                     return;
                                 }
 
@@ -820,7 +664,7 @@
                                 if (!seenNotifications[notifKey]) {
                                     PanelCore._showNotification(
                                         `✨ Новый плагин: ${pluginConfig.name}`,
-                                        pluginConfig.description || 'Доступен новый плагин для панели управления',
+                                        pluginConfig.description || 'Доступен новый плагин',
                                         pluginConfig.icon || '🚀',
                                         'new'
                                     );
@@ -829,11 +673,8 @@
                                 }
                             });
 
-                            if (newPluginsCount > 0) {
-                                console.log(`✅ Panel Core: Добавлено ${newPluginsCount} новых плагинов`);
-                            }
-                            if (updatedPluginsCount > 0) {
-                                console.log(`✅ Panel Core: Обновлено ${updatedPluginsCount} плагинов`);
+                            if (newPluginsCount > 0 || updatedPluginsCount > 0) {
+                                PanelCore._updateVisibleIcons();
                             }
                         }
 
@@ -861,9 +702,10 @@
                 version: pluginConfig.version || '1.0.0',
                 downloadURL: downloadURL,
                 priority: pluginConfig.priority || 10,
+                routes: pluginConfig.routes || [],
                 onOpen: function(container) {
-                    this._loadPluginCode(pluginConfig, container);
-                }.bind(this),
+                    PanelCore._loadPluginCode(pluginConfig, container);
+                },
                 onClose: function() {},
                 onBadgeUpdate: function() {}
             };
@@ -954,6 +796,7 @@
             if (!plugin) return;
 
             plugin._version = pluginConfig.version;
+            plugin._routes = pluginConfig.routes || [];
             
             if (this.isOpen(pluginConfig.id)) {
                 this.closePlugin(pluginConfig.id);
@@ -970,19 +813,54 @@
                     plugin._iconElement.appendChild(indicator);
                 }
                 indicator.classList.add('show');
-                setTimeout(() => {
+                setTimeout(function() {
                     if (indicator) indicator.classList.remove('show');
                 }, 5000);
 
                 plugin._iconElement.style.animation = 'badgePulse 0.6s ease 2';
-                setTimeout(() => {
+                setTimeout(function() {
                     if (plugin._iconElement) {
                         plugin._iconElement.style.animation = '';
                     }
                 }, 1200);
             }
 
+            this._updateVisibleIcons();
+
             console.log(`🔄 Panel Core: Плагин "${pluginConfig.name}" перезагружен (v${pluginConfig.version})`);
+        },
+
+        // ============================================================
+        // Управление видимостью иконок
+        // ============================================================
+
+        _updateVisibleIcons: function() {
+            const url = window.location.pathname + window.location.hash;
+            const activePlugins = Router.getActivePlugins(this._plugins, url);
+            const activeIds = Object.keys(activePlugins);
+
+            console.log(`📍 Текущий URL: ${url}`);
+            console.log(`🎯 Активных плагинов: ${activeIds.length}`);
+
+            Object.keys(this._plugins).forEach(function(id) {
+                const plugin = this._plugins[id];
+                const isActive = activeIds.includes(id);
+
+                if (isActive) {
+                    if (!plugin._iconElement && this._taskbar) {
+                        this._addIconToTaskbar(id);
+                    } else if (plugin._iconElement) {
+                        plugin._iconElement.style.display = '';
+                    }
+                } else {
+                    if (plugin._iconElement) {
+                        plugin._iconElement.style.display = 'none';
+                    }
+                    if (this.isOpen(id)) {
+                        this.closePlugin(id);
+                    }
+                }
+            }.bind(this));
         },
 
         // ============================================================
@@ -991,29 +869,18 @@
 
         _init: function() {
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => this._createUI());
+                document.addEventListener('DOMContentLoaded', function() {
+                    this._createUI();
+                }.bind(this));
             } else {
                 this._createUI();
             }
 
             this._startAutoUpdate();
+            this._watchUrlChanges();
         },
 
         _createUI: function() {
-            // Создаем кнопку-флажок (всегда видна)
-            const flag = document.createElement('button');
-            flag.id = 'panel-toggle-flag';
-            flag.innerHTML = `
-                <span class="flag-icon">▶</span>
-                <span class="flag-tooltip">Скрыть панель</span>
-            `;
-            flag.addEventListener('click', () => {
-                this._togglePanel();
-            });
-            document.body.appendChild(flag);
-            this._toggleFlag = flag;
-
-            // Создаем панель
             this._taskbar = document.createElement('div');
             this._taskbar.id = 'panelTaskbar';
             document.body.appendChild(this._taskbar);
@@ -1028,37 +895,42 @@
 
             console.log('🔷 Panel Core: UI создан');
 
-            // Применяем сохраненное состояние
-            this._applyPanelState();
+            this.loadPluginsFromVersion();
 
-            // Загружаем плагины только если панель видна
-            if (this._isPanelVisible) {
-                this.loadPluginsFromVersion();
-            }
-
-            // Клик вне окна
-            document.addEventListener('click', (e) => {
+            document.addEventListener('click', function(e) {
                 if (this._openPluginId) {
                     const plugin = this._plugins[this._openPluginId];
                     const win = plugin?._windowElement;
                     const icon = plugin?._iconElement;
-                    const flagEl = document.getElementById('panel-toggle-flag');
-                    if (win && !win.contains(e.target) && icon && !icon.contains(e.target) && flagEl && !flagEl.contains(e.target)) {
+                    if (win && !win.contains(e.target) && icon && !icon.contains(e.target)) {
                         this.closePlugin(this._openPluginId);
                     }
                 }
-            });
+            }.bind(this));
 
-            document.addEventListener('keydown', (e) => {
+            document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && this._openPluginId) {
                     this.closePlugin(this._openPluginId);
                 }
-            });
+            }.bind(this));
 
             this._isInitialized = true;
         },
 
-        _showNotification: function(title, text, icon = '🔔', type = 'update', duration = CONFIG.NOTIFICATION_DURATION) {
+        _watchUrlChanges: function() {
+            let lastUrl = window.location.pathname + window.location.hash;
+            
+            setInterval(function() {
+                const currentUrl = window.location.pathname + window.location.hash;
+                if (currentUrl !== lastUrl) {
+                    lastUrl = currentUrl;
+                    console.log(`🔄 URL изменился: ${currentUrl}`);
+                    this._updateVisibleIcons();
+                }
+            }.bind(this), 500);
+        },
+
+        _showNotification: function(title, text, icon = '🔔', type = 'update', duration) {
             if (!this._notificationsContainer) {
                 this._notificationsContainer = document.createElement('div');
                 this._notificationsContainer.id = 'panelNotifications';
@@ -1069,7 +941,7 @@
             notif.className = `notification notif-${type}`;
             
             notif.innerHTML = `
-                <span class="notif-icon">${icon}</span>
+                <span class="notif-icon">${icon || '🔔'}</span>
                 <div class="notif-content">
                     <div class="notif-title">${title}</div>
                     <div class="notif-text">${text}</div>
@@ -1080,28 +952,40 @@
             notif.querySelector('.notif-close').addEventListener('click', function(e) {
                 e.stopPropagation();
                 notif.classList.add('removing');
-                setTimeout(() => {
+                setTimeout(function() {
                     if (notif.parentNode) notif.remove();
                 }, 300);
             });
 
             notif.addEventListener('click', function() {
                 notif.classList.add('removing');
-                setTimeout(() => {
+                setTimeout(function() {
                     if (notif.parentNode) notif.remove();
                 }, 300);
             });
 
             this._notificationsContainer.appendChild(notif);
 
-            setTimeout(() => {
+            setTimeout(function() {
                 if (notif.parentNode) {
                     notif.classList.add('removing');
-                    setTimeout(() => {
+                    setTimeout(function() {
                         if (notif.parentNode) notif.remove();
                     }, 300);
                 }
-            }, duration);
+            }, duration || CONFIG.NOTIFICATION_DURATION);
+
+            try {
+                if (typeof GM_notification === 'function') {
+                    GM_notification({
+                        title: title,
+                        text: text,
+                        timeout: duration || CONFIG.NOTIFICATION_DURATION
+                    });
+                }
+            } catch (e) {
+                // Игнорируем ошибки
+            }
         },
 
         _addIconToTaskbar: function(pluginId) {
@@ -1122,13 +1006,13 @@
             this._taskbar.appendChild(icon);
             this._updateIconBadge(pluginId);
 
-            icon.addEventListener('click', () => {
+            icon.addEventListener('click', function() {
                 if (this.isOpen(pluginId)) {
                     this.closePlugin(pluginId);
                 } else {
                     this.openPlugin(pluginId);
                 }
-            });
+            }.bind(this));
         },
 
         _createWindow: function(pluginId) {
@@ -1148,10 +1032,10 @@
                 <div class="window-content"></div>
             `;
 
-            win.querySelector('.window-close').addEventListener('click', (e) => {
+            win.querySelector('.window-close').addEventListener('click', function(e) {
                 e.stopPropagation();
                 this.closePlugin(pluginId);
-            });
+            }.bind(this));
 
             this._windows.appendChild(win);
             plugin._windowElement = win;
@@ -1168,9 +1052,13 @@
             if (count > 0) {
                 badge.textContent = count > 99 ? '99+' : String(count);
                 badge.classList.remove('hidden');
+                badge.classList.remove('pulse');
+                void badge.offsetWidth;
+                badge.classList.add('pulse');
             } else {
                 badge.textContent = '0';
                 badge.classList.add('hidden');
+                badge.classList.remove('pulse');
             }
 
             if (typeof plugin.onBadgeUpdate === 'function') {
@@ -1183,59 +1071,29 @@
         },
 
         _startAutoUpdate: function() {
-            setTimeout(() => {
-                if (this._isPanelVisible) {
-                    this.loadPluginsFromVersion();
-                }
-            }, 5000);
+            setTimeout(function() {
+                this.loadPluginsFromVersion();
+            }.bind(this), 5000);
 
-            this._checkTimer = setInterval(() => {
-                if (this._isPanelVisible) {
-                    this.loadPluginsFromVersion();
-                }
-            }, CONFIG.CHECK_INTERVAL);
+            this._checkTimer = setInterval(function() {
+                this.loadPluginsFromVersion();
+            }.bind(this), CONFIG.CHECK_INTERVAL);
 
             console.log(`⏰ Panel Core: Автообновление включено (интервал ${CONFIG.CHECK_INTERVAL / 60000} мин)`);
-        },
-
-        // ============================================================
-        // Метод для принудительной перезагрузки плагинов (для отладки)
-        // ============================================================
-        reloadPlugins: function() {
-            console.log('🔄 Panel Core: Принудительная перезагрузка плагинов...');
-            // Очищаем список плагинов
-            this._plugins = {};
-            this._pluginOrder = [];
-            this._openPluginId = null;
-            
-            // Очищаем панель от иконок
-            if (this._taskbar) {
-                this._taskbar.innerHTML = '';
-            }
-            
-            // Очищаем окна
-            if (this._windows) {
-                this._windows.innerHTML = '';
-            }
-            
-            // Загружаем заново
-            if (this._isPanelVisible) {
-                this.loadPluginsFromVersion();
-            }
         }
     };
 
     // ============================================================
-    // 4. ЭКСПОРТ API
+    // 5. ЭКСПОРТ API
     // ============================================================
     window.PanelCore = PanelCore;
 
     // ============================================================
-    // 5. ЗАПУСК
+    // 6. ЗАПУСК
     // ============================================================
     PanelCore._init();
 
     console.log('🔷 Panel Core: Готов!');
-    console.log(`📖 Документация: https://github.com/kollsan95/tampermonkey-plugins`);
+    console.log('📖 Документация: https://github.com/kollsan95/tampermonkey-plugins');
 
 })();
