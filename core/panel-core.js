@@ -154,7 +154,6 @@
             border-radius: 10px !important;
         }
 
-        /* Иконки в панели */
         .taskbar-icon {
             border: none !important;
             border-radius: 50% !important;
