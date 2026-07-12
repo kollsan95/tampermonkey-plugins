@@ -58,10 +58,11 @@
     // ============================================================
     const CONFIG = {
         VERSION_URL: 'https://kollsan95.github.io/tampermonkey-plugins/version.json',
-        CHECK_INTERVAL: 3600000, // 1 час (в миллисекундах)
+        CHECK_INTERVAL: 86400000, // 1 день (в миллисекундах)
         STORAGE_KEY: 'panel_plugins_cache',
         NOTIFICATIONS_KEY: 'panel_notifications_seen',
-        NOTIFICATION_DURATION: 8000 // 8 секунд
+        NOTIFICATION_DURATION: 8000, // 8 секунд
+        PANEL_STATE_KEY: 'panel_visible_state'
     };
 
     // ============================================================
@@ -491,6 +492,120 @@
                 max-font-size: 12px !important;
             }
         }
+
+        #panel-toggle-btn {
+            width: 2.8vw !important;
+            height: 2.8vw !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            max-width: 48px !important;
+            max-height: 48px !important;
+            border: none !important;
+            border-radius: 50% !important;
+            background: rgba(0, 0, 0, 0.04) !important;
+            color: #1a1a1a !important;
+            font-size: 1.2vw !important;
+            min-font-size: 14px !important;
+            max-font-size: 22px !important;
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            position: relative !important;
+            padding: 0 !important;
+            flex-shrink: 0 !important;
+            margin-top: auto !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+        }
+
+        #panel-toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.08) !important;
+            transform: scale(1.08) !important;
+        }
+
+        #panel-toggle-btn.active {
+            background: rgba(0, 122, 255, 0.12) !important;
+            color: #007aff !important;
+        }
+
+        #panel-toggle-btn .tooltip {
+            position: absolute !important;
+            right: calc(100% + 0.8vw) !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background: rgba(0, 0, 0, 0.85) !important;
+            color: white !important;
+            padding: 0.4vh 0.8vw !important;
+            border-radius: 6px !important;
+            font-size: 0.8vw !important;
+            min-font-size: 11px !important;
+            max-font-size: 14px !important;
+            white-space: nowrap !important;
+            pointer-events: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transition: all 0.2s !important;
+        }
+
+        #panel-toggle-btn:hover .tooltip {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        #panel-toggle-btn .tooltip::after {
+            content: '' !important;
+            position: absolute !important;
+            left: 100% !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            border: 5px solid transparent !important;
+            border-left-color: rgba(0, 0, 0, 0.85) !important;
+        }
+
+        /* Стиль для кнопки, когда панель скрыта (парит отдельно) */
+        #panel-toggle-btn.floating {
+            position: fixed !important;
+            bottom: 5% !important;
+            right: 2% !important;
+            width: 3.2vw !important;
+            height: 3.2vw !important;
+            min-width: 38px !important;
+            min-height: 38px !important;
+            max-width: 56px !important;
+            max-height: 56px !important;
+            font-size: 1.4vw !important;
+            min-font-size: 18px !important;
+            max-font-size: 26px !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            z-index: 999999 !important;
+            margin-top: 0 !important;
+        }
+
+        #panel-toggle-btn.floating:hover {
+            transform: scale(1.1) !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        /* Анимация появления/исчезновения панели */
+        #panelTaskbar.hidden {
+            display: none !important;
+        }
+
+        /* Анимация для кнопки при переключении */
+        @keyframes togglePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        #panel-toggle-btn.pulse {
+            animation: togglePulse 0.4s ease !important;
+        }
     `);
 
     // ============================================================
@@ -507,6 +622,87 @@
         _checkTimer: null,
         _isInitialized: false,
 
+        // ============================================================
+        // Методы для управления видимостью панели
+        // ============================================================
+
+        _getPanelState: function() {
+            const hostname = window.location.hostname;
+            const storage = GM_getValue(CONFIG.PANEL_STATE_KEY, '{}');
+            try {
+                const data = JSON.parse(storage);
+                return data[hostname] !== undefined ? data[hostname] : true; // по умолчанию показана
+            } catch (e) {
+                return true;
+            }
+        },
+
+        _setPanelState: function(visible) {
+            const hostname = window.location.hostname;
+            const storage = GM_getValue(CONFIG.PANEL_STATE_KEY, '{}');
+            try {
+                const data = JSON.parse(storage);
+                data[hostname] = visible;
+                GM_setValue(CONFIG.PANEL_STATE_KEY, JSON.stringify(data));
+            } catch (e) {
+                const data = {};
+                data[hostname] = visible;
+                GM_setValue(CONFIG.PANEL_STATE_KEY, JSON.stringify(data));
+            }
+        },
+
+        _togglePanel: function() {
+            const taskbar = document.getElementById('panelTaskbar');
+            const toggleBtn = document.getElementById('panel-toggle-btn');
+            if (!taskbar) return;
+
+            const isVisible = !taskbar.classList.contains('hidden');
+            
+            if (isVisible) {
+                // Скрываем панель
+                taskbar.classList.add('hidden');
+                toggleBtn.classList.remove('active');
+                toggleBtn.classList.add('floating');
+                toggleBtn.textContent = '◀';
+                toggleBtn.querySelector('.tooltip').textContent = 'Показать панель';
+                this._setPanelState(false);
+            } else {
+                // Показываем панель
+                taskbar.classList.remove('hidden');
+                toggleBtn.classList.remove('floating');
+                toggleBtn.classList.add('active');
+                toggleBtn.textContent = '▶';
+                toggleBtn.querySelector('.tooltip').textContent = 'Скрыть панель';
+                this._setPanelState(true);
+            }
+            
+            // Анимация
+            toggleBtn.classList.remove('pulse');
+            void toggleBtn.offsetWidth;
+            toggleBtn.classList.add('pulse');
+        },
+
+        _applyPanelState: function() {
+            const taskbar = document.getElementById('panelTaskbar');
+            const toggleBtn = document.getElementById('panel-toggle-btn');
+            if (!taskbar || !toggleBtn) return;
+
+            const isVisible = this._getPanelState();
+            
+            if (isVisible) {
+                taskbar.classList.remove('hidden');
+                toggleBtn.classList.remove('floating');
+                toggleBtn.classList.add('active');
+                toggleBtn.textContent = '▶';
+                toggleBtn.querySelector('.tooltip').textContent = 'Скрыть панель';
+            } else {
+                taskbar.classList.add('hidden');
+                toggleBtn.classList.add('floating');
+                toggleBtn.classList.remove('active');
+                toggleBtn.textContent = '◀';
+                toggleBtn.querySelector('.tooltip').textContent = 'Показать панель';
+            }
+        },
         // ============================================================
         // Публичные методы
         // ============================================================
@@ -674,7 +870,6 @@
             if (openId) {
                 this.closePlugin(openId);
             }
-            // Дополнительная очистка — закрываем все окна
             if (this._windows) {
                 const allWindows = this._windows.querySelectorAll('.plugin-window');
                 allWindows.forEach(win => {
@@ -682,13 +877,16 @@
                     win.classList.add('hidden');
                 });
             }
-            // Убираем все активные иконки
             document.querySelectorAll('.taskbar-icon.active').forEach(icon => {
                 icon.classList.remove('active');
             });
             const taskbar = document.getElementById('panelTaskbar');
             if (taskbar) {
-                taskbar.classList.remove('has-window-open');
+                // Проверяем, есть ли активные иконки (не считая кнопку-переключатель)
+                const hasActive = document.querySelector('.taskbar-icon.active');
+                if (!hasActive) {
+                    taskbar.classList.remove('has-window-open');
+                }
             }
             this._openPluginId = null;
         },
@@ -987,7 +1185,24 @@
             this._notificationsContainer.id = 'panelNotifications';
             document.body.appendChild(this._notificationsContainer);
 
+            // СОЗДАЁМ КНОПКУ-ПЕРЕКЛЮЧАТЕЛЬ
+            const toggleBtn = document.createElement('button');
+            toggleBtn.id = 'panel-toggle-btn';
+            toggleBtn.innerHTML = `
+                ▶
+                <span class="tooltip">Скрыть панель</span>
+            `;
+            toggleBtn.addEventListener('click', () => {
+                this._togglePanel();
+            });
+            
+            // Добавляем в панель (в самый низ)
+            this._taskbar.appendChild(toggleBtn);
+
             console.log('🔷 Panel Core: UI создан');
+
+            // Загружаем состояние панели
+            this._applyPanelState();
 
             this.loadPluginsFromVersion();
 
@@ -996,7 +1211,8 @@
                     const plugin = this._plugins[this._openPluginId];
                     const win = plugin?._windowElement;
                     const icon = plugin?._iconElement;
-                    if (win && !win.contains(e.target) && icon && !icon.contains(e.target)) {
+                    const toggleBtnEl = document.getElementById('panel-toggle-btn');
+                    if (win && !win.contains(e.target) && icon && !icon.contains(e.target) && toggleBtnEl && !toggleBtnEl.contains(e.target)) {
                         this.closePlugin(this._openPluginId);
                     }
                 }
@@ -1084,7 +1300,15 @@
             `;
 
             plugin._iconElement = icon;
-            this._taskbar.appendChild(icon);
+            
+            // Вставляем перед кнопкой-переключателем (она последняя)
+            const toggleBtn = document.getElementById('panel-toggle-btn');
+            if (toggleBtn) {
+                this._taskbar.insertBefore(icon, toggleBtn);
+            } else {
+                this._taskbar.appendChild(icon);
+            }
+            
             this._updateIconBadge(pluginId);
 
             icon.addEventListener('click', () => {
