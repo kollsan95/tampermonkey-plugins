@@ -11,7 +11,7 @@
 // @run-at       document-end
 // ==/UserScript//
 
-// Плагин просто определяет модуль, который будет использован Core
+// Плагин определяет модуль, который будет использован Core
 window.__plugin_module = (function() {
     'use strict';
 
