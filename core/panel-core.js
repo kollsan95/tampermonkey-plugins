@@ -73,20 +73,19 @@
     `);
 
     GM_addStyle(`
-        /* ===== ПАНЕЛЬ (адаптивная) ===== */
         #panelTaskbar {
             position: fixed !important;
             top: 10% !important;
             right: 0 !important;
-            width: 4vw !important;          /* 4% от ширины экрана */
-            min-width: 40px !important;     /* минимум 40px */
-            max-width: 64px !important;     /* максимум 64px */
+            width: 4vw !important;
+            min-width: 40px !important;
+            max-width: 64px !important;
             height: 80% !important;
-            background: rgba(255, 255, 255, 0.95) !important;
+            background: rgba(245, 245, 247, 0.95) !important;  /* слегка серая по умолчанию */
             backdrop-filter: blur(10px) !important;
             -webkit-backdrop-filter: blur(10px) !important;
             border-radius: 24px 0 0 24px !important;
-            padding: 1.2vh 0.6vw !important; /* относительные отступы */
+            padding: 1.2vh 0.6vw !important;
             box-shadow: 
                 -4px 0 32px rgba(0, 0, 0, 0.08),
                 inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
@@ -100,6 +99,12 @@
             overflow-y: auto !important;
             overflow-x: hidden !important;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            transition: background 0.3s ease !important;
+        }
+
+        /* Панель становится светлее, когда окно открыто */
+        #panelTaskbar.has-window-open {
+            background: rgba(235, 235, 237, 0.95) !important;
         }
 
         #panelTaskbar::-webkit-scrollbar {
@@ -110,7 +115,7 @@
             border-radius: 10px !important;
         }
 
-        /* Иконки в панели (адаптивные) */
+        /* Иконки в панели */
         .taskbar-icon {
             width: 2.8vw !important;
             height: 2.8vw !important;
@@ -120,13 +125,13 @@
             max-height: 48px !important;
             border: none !important;
             border-radius: 50% !important;
-            background: rgba(0, 0, 0, 0.04) !important;
+            background: transparent !important;
             color: #1a1a1a !important;
             font-size: 1.2vw !important;
             min-font-size: 14px !important;
             max-font-size: 22px !important;
             cursor: pointer !important;
-            transition: all 0.2s !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -136,13 +141,22 @@
         }
 
         .taskbar-icon:hover {
-            background: rgba(0, 0, 0, 0.08) !important;
+            background: rgba(0, 0, 0, 0.06) !important;
             transform: scale(1.08) !important;
         }
 
+        /* АКТИВНАЯ ИКОНКА — белая, сливается с окном */
         .taskbar-icon.active {
-            background: rgba(0, 122, 255, 0.15) !important;
-            color: #007aff !important;
+            background: white !important;
+            color: #1a1a1a !important;
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+            transform: scale(1.05) !important;
+        }
+
+        .taskbar-icon.active:hover {
+            transform: scale(1.08) !important;
         }
 
         /* Tooltip */
@@ -205,7 +219,7 @@
             display: none !important;
         }
 
-        /* ===== ОКНО ПЛАГИНА (адаптивное) ===== */
+        /* ===== ОКНО ПЛАГИНА ===== */
         #panelWindows {
             position: fixed !important;
             top: 0 !important;
@@ -219,26 +233,30 @@
         .plugin-window {
             position: fixed !important;
             top: 10% !important;
-            right: 4vw !important;           /* ширина панели */
-            width: 30vw !important;          /* 30% от ширины экрана */
+            right: 4vw !important;
+            width: 30vw !important;
             min-width: 280px !important;
             max-width: 500px !important;
             height: 80% !important;
             background: white !important;
             border-radius: 24px 0 0 24px !important;
-            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.15) !important;
+            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.12) !important;
             pointer-events: auto !important;
             transform: translateX(calc(30vw + 20px)) !important;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
             display: flex !important;
             flex-direction: column !important;
             overflow: hidden !important;
             border: 1px solid rgba(255, 255, 255, 0.3) !important;
             border-right: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
         }
 
         .plugin-window.open {
             transform: translateX(0) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
 
         .plugin-window.hidden {
@@ -251,7 +269,7 @@
             justify-content: space-between !important;
             padding: 2vh 1.5vw !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
-            background: #f8f9fa !important;
+            background: white !important;
             flex-shrink: 0 !important;
             min-height: 50px !important;
         }
@@ -267,7 +285,6 @@
             gap: 8px !important;
         }
 
-        /* Крестик скрыт */
         .plugin-window .window-close {
             display: none !important;
         }
@@ -281,6 +298,7 @@
             min-font-size: 13px !important;
             max-font-size: 15px !important;
             line-height: 1.6 !important;
+            background: white !important;
         }
 
         .plugin-window .window-content::-webkit-scrollbar {
@@ -291,7 +309,7 @@
             border-radius: 10px !important;
         }
 
-        /* ===== УВЕДОМЛЕНИЯ (адаптивные) ===== */
+        /* ===== УВЕДОМЛЕНИЯ ===== */
         #panelNotifications {
             position: fixed !important;
             top: 2vh !important;
@@ -361,7 +379,7 @@
             max-font-size: 18px !important;
         }
 
-        /* ===== АДАПТИВ ДЛЯ МАЛЕНЬКИХ ЭКРАНОВ ===== */
+        /* ===== АДАПТИВ ===== */
         @media (max-width: 768px) {
             #panelTaskbar {
                 width: 6vw !important;
@@ -418,7 +436,6 @@
             }
         }
 
-        /* ===== АДАПТИВ ДЛЯ ОЧЕНЬ МАЛЕНЬКИХ ЭКРАНОВ ===== */
         @media (max-width: 480px) {
             #panelTaskbar {
                 width: 8vw !important;
@@ -576,16 +593,19 @@
                 return;
             }
 
-            if (this._openPluginId === pluginId && plugin._windowElement && plugin._windowElement.classList.contains('open')) {
+            // Если это окно уже открыто — закрываем его (toggle)
+            if (this._openPluginId === pluginId) {
+                this.closePlugin(pluginId);
                 return;
             }
 
-            if (this._openPluginId) {
-                this.closePlugin(this._openPluginId);
-            }
+            // Закрываем все открытые окна
+            this.closeAllPlugins();
 
+            // Открываем новое
             this._openPluginId = pluginId;
 
+            // Создаём окно если нужно
             if (!plugin._windowElement) {
                 this._createWindow(pluginId);
             }
@@ -596,6 +616,13 @@
                 win.classList.add('open');
             });
 
+            // Добавляем класс к панели
+            const taskbar = document.getElementById('panelTaskbar');
+            if (taskbar) {
+                taskbar.classList.add('has-window-open');
+            }
+
+            // Подсвечиваем иконку
             if (plugin._iconElement) {
                 plugin._iconElement.classList.add('active');
             }
@@ -628,8 +655,19 @@
                 }, 350);
             }
 
+            // Убираем подсветку иконки
             if (plugin._iconElement) {
                 plugin._iconElement.classList.remove('active');
+            }
+
+            // Убираем класс с панели, если нет других открытых окон
+            const taskbar = document.getElementById('panelTaskbar');
+            if (taskbar) {
+                // Проверяем, есть ли ещё активные иконки
+                const hasActive = document.querySelector('.taskbar-icon.active');
+                if (!hasActive) {
+                    taskbar.classList.remove('has-window-open');
+                }
             }
 
             if (typeof plugin.onClose === 'function') {
@@ -642,6 +680,30 @@
 
             this._openPluginId = null;
             console.log(`📂 Panel Core: Закрыт плагин "${plugin.name}"`);
+        },
+
+        closeAllPlugins: function() {
+            const openId = this._openPluginId;
+            if (openId) {
+                this.closePlugin(openId);
+            }
+            // Дополнительная очистка — закрываем все окна
+            if (this._windows) {
+                const allWindows = this._windows.querySelectorAll('.plugin-window');
+                allWindows.forEach(win => {
+                    win.classList.remove('open');
+                    win.classList.add('hidden');
+                });
+            }
+            // Убираем все активные иконки
+            document.querySelectorAll('.taskbar-icon.active').forEach(icon => {
+                icon.classList.remove('active');
+            });
+            const taskbar = document.getElementById('panelTaskbar');
+            if (taskbar) {
+                taskbar.classList.remove('has-window-open');
+            }
+            this._openPluginId = null;
         },
 
         isOpen: function(pluginId) {
