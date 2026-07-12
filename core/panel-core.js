@@ -73,18 +73,20 @@
     `);
 
     GM_addStyle(`
-        /* ===== ПАНЕЛЬ (прижата к правому краю) ===== */
+        /* ===== ПАНЕЛЬ (адаптивная) ===== */
         #panelTaskbar {
             position: fixed !important;
             top: 10% !important;
             right: 0 !important;
-            width: 64px !important;
+            width: 4vw !important;          /* 4% от ширины экрана */
+            min-width: 40px !important;     /* минимум 40px */
+            max-width: 64px !important;     /* максимум 64px */
             height: 80% !important;
             background: rgba(255, 255, 255, 0.95) !important;
             backdrop-filter: blur(10px) !important;
             -webkit-backdrop-filter: blur(10px) !important;
             border-radius: 24px 0 0 24px !important;
-            padding: 12px 8px !important;
+            padding: 1.2vh 0.6vw !important; /* относительные отступы */
             box-shadow: 
                 -4px 0 32px rgba(0, 0, 0, 0.08),
                 inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
@@ -94,7 +96,7 @@
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
-            gap: 6px !important;
+            gap: 0.6vh !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
@@ -108,17 +110,21 @@
             border-radius: 10px !important;
         }
 
-        /* Иконки в панели */
+        /* Иконки в панели (адаптивные) */
         .taskbar-icon {
-            width: 44px !important;
-            height: 44px !important;
-            min-width: 44px !important;
-            min-height: 44px !important;
+            width: 2.8vw !important;
+            height: 2.8vw !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            max-width: 48px !important;
+            max-height: 48px !important;
             border: none !important;
             border-radius: 50% !important;
             background: rgba(0, 0, 0, 0.04) !important;
             color: #1a1a1a !important;
-            font-size: 18px !important;
+            font-size: 1.2vw !important;
+            min-font-size: 14px !important;
+            max-font-size: 22px !important;
             cursor: pointer !important;
             transition: all 0.2s !important;
             display: flex !important;
@@ -142,14 +148,16 @@
         /* Tooltip */
         .taskbar-icon .tooltip {
             position: absolute !important;
-            right: calc(100% + 12px) !important;
+            right: calc(100% + 0.8vw) !important;
             top: 50% !important;
             transform: translateY(-50%) !important;
             background: rgba(0, 0, 0, 0.85) !important;
             color: white !important;
-            padding: 4px 12px !important;
+            padding: 0.4vh 0.8vw !important;
             border-radius: 6px !important;
-            font-size: 12px !important;
+            font-size: 0.8vw !important;
+            min-font-size: 11px !important;
+            max-font-size: 14px !important;
             white-space: nowrap !important;
             pointer-events: none !important;
             opacity: 0 !important;
@@ -179,11 +187,13 @@
             right: -4px !important;
             background: #ff3b30 !important;
             color: white !important;
-            font-size: 10px !important;
+            font-size: 0.6vw !important;
+            min-font-size: 9px !important;
+            max-font-size: 12px !important;
             font-weight: 600 !important;
-            min-width: 18px !important;
-            height: 18px !important;
-            padding: 0 5px !important;
+            min-width: 16px !important;
+            height: 16px !important;
+            padding: 0 4px !important;
             border-radius: 10px !important;
             display: flex !important;
             align-items: center !important;
@@ -195,7 +205,7 @@
             display: none !important;
         }
 
-        /* ===== ОКНО ПЛАГИНА (справа, на всю высоту) ===== */
+        /* ===== ОКНО ПЛАГИНА (адаптивное) ===== */
         #panelWindows {
             position: fixed !important;
             top: 0 !important;
@@ -209,14 +219,16 @@
         .plugin-window {
             position: fixed !important;
             top: 10% !important;
-            right: 64px !important;
-            width: 400px !important;
+            right: 4vw !important;           /* ширина панели */
+            width: 30vw !important;          /* 30% от ширины экрана */
+            min-width: 280px !important;
+            max-width: 500px !important;
             height: 80% !important;
             background: white !important;
             border-radius: 24px 0 0 24px !important;
             box-shadow: -8px 0 40px rgba(0, 0, 0, 0.15) !important;
             pointer-events: auto !important;
-            transform: translateX(420px) !important;
+            transform: translateX(calc(30vw + 20px)) !important;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
             display: flex !important;
             flex-direction: column !important;
@@ -237,33 +249,37 @@
             display: flex !important;
             align-items: center !important;
             justify-content: space-between !important;
-            padding: 16px 20px !important;
+            padding: 2vh 1.5vw !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
             background: #f8f9fa !important;
             flex-shrink: 0 !important;
-            min-height: 56px !important;
+            min-height: 50px !important;
         }
 
         .plugin-window .window-title {
             font-weight: 600 !important;
-            font-size: 16px !important;
+            font-size: 1.1vw !important;
+            min-font-size: 14px !important;
+            max-font-size: 18px !important;
             color: #1a1a1a !important;
             display: flex !important;
             align-items: center !important;
             gap: 8px !important;
         }
 
-        /* КРЕСТИК СКРЫТ */
+        /* Крестик скрыт */
         .plugin-window .window-close {
             display: none !important;
         }
 
         .plugin-window .window-content {
-            padding: 20px !important;
+            padding: 2vh 1.5vw !important;
             overflow-y: auto !important;
             flex: 1 !important;
             color: #1a1a1a !important;
-            font-size: 14px !important;
+            font-size: 0.9vw !important;
+            min-font-size: 13px !important;
+            max-font-size: 15px !important;
             line-height: 1.6 !important;
         }
 
@@ -275,15 +291,17 @@
             border-radius: 10px !important;
         }
 
-        /* ===== УВЕДОМЛЕНИЯ ===== */
+        /* ===== УВЕДОМЛЕНИЯ (адаптивные) ===== */
         #panelNotifications {
             position: fixed !important;
-            top: 20px !important;
-            right: 84px !important;
+            top: 2vh !important;
+            right: calc(4vw + 1.5vw) !important;
             z-index: 9999999 !important;
             display: flex !important;
             flex-direction: column !important;
-            gap: 10px !important;
+            gap: 1vh !important;
+            max-width: 25vw !important;
+            min-width: 200px !important;
             max-width: 380px !important;
             pointer-events: none !important;
         }
@@ -292,11 +310,11 @@
             background: rgba(255, 255, 255, 0.95) !important;
             backdrop-filter: blur(10px) !important;
             border-radius: 12px !important;
-            padding: 14px 16px !important;
+            padding: 1.2vh 1vw !important;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
             display: flex !important;
             align-items: flex-start !important;
-            gap: 12px !important;
+            gap: 0.8vw !important;
             pointer-events: auto !important;
             cursor: pointer !important;
             animation: notifSlideIn 0.3s ease !important;
@@ -316,15 +334,158 @@
             to { opacity: 0; transform: translateX(40px); }
         }
 
-        #panelNotifications .notif-icon { font-size: 24px !important; }
-        #panelNotifications .notif-title { font-weight: 600 !important; font-size: 14px !important; }
-        #panelNotifications .notif-text { font-size: 13px !important; color: #555 !important; }
+        #panelNotifications .notif-icon {
+            font-size: 1.6vw !important;
+            min-font-size: 20px !important;
+            max-font-size: 28px !important;
+        }
+        #panelNotifications .notif-title {
+            font-weight: 600 !important;
+            font-size: 0.9vw !important;
+            min-font-size: 13px !important;
+            max-font-size: 15px !important;
+        }
+        #panelNotifications .notif-text {
+            font-size: 0.8vw !important;
+            min-font-size: 12px !important;
+            max-font-size: 14px !important;
+            color: #555 !important;
+        }
         #panelNotifications .notif-close {
             background: none !important;
             border: none !important;
             color: #999 !important;
             cursor: pointer !important;
-            font-size: 16px !important;
+            font-size: 1vw !important;
+            min-font-size: 14px !important;
+            max-font-size: 18px !important;
+        }
+
+        /* ===== АДАПТИВ ДЛЯ МАЛЕНЬКИХ ЭКРАНОВ ===== */
+        @media (max-width: 768px) {
+            #panelTaskbar {
+                width: 6vw !important;
+                min-width: 36px !important;
+                max-width: 48px !important;
+                padding: 1vh 0.4vw !important;
+            }
+            .taskbar-icon {
+                width: 3.5vw !important;
+                height: 3.5vw !important;
+                min-width: 28px !important;
+                min-height: 28px !important;
+                max-width: 40px !important;
+                max-height: 40px !important;
+                font-size: 1.6vw !important;
+                min-font-size: 12px !important;
+                max-font-size: 18px !important;
+            }
+            .plugin-window {
+                right: 6vw !important;
+                width: 70vw !important;
+                min-width: 200px !important;
+                max-width: 320px !important;
+                transform: translateX(calc(70vw + 20px)) !important;
+            }
+            .plugin-window .window-title {
+                font-size: 1.4vw !important;
+                min-font-size: 13px !important;
+                max-font-size: 16px !important;
+            }
+            .plugin-window .window-content {
+                font-size: 1.2vw !important;
+                min-font-size: 12px !important;
+                max-font-size: 14px !important;
+                padding: 1.5vh 1.2vw !important;
+            }
+            #panelNotifications {
+                right: calc(6vw + 1.5vw) !important;
+                max-width: 50vw !important;
+                min-width: 160px !important;
+            }
+            #panelNotifications .notif-title {
+                font-size: 1.2vw !important;
+                min-font-size: 12px !important;
+                max-font-size: 14px !important;
+            }
+            #panelNotifications .notif-text {
+                font-size: 1vw !important;
+                min-font-size: 11px !important;
+                max-font-size: 13px !important;
+            }
+            .taskbar-icon .tooltip {
+                display: none !important;
+            }
+        }
+
+        /* ===== АДАПТИВ ДЛЯ ОЧЕНЬ МАЛЕНЬКИХ ЭКРАНОВ ===== */
+        @media (max-width: 480px) {
+            #panelTaskbar {
+                width: 8vw !important;
+                min-width: 32px !important;
+                max-width: 40px !important;
+                padding: 0.8vh 0.3vw !important;
+                gap: 0.3vh !important;
+                border-radius: 16px 0 0 16px !important;
+            }
+            .taskbar-icon {
+                width: 4vw !important;
+                height: 4vw !important;
+                min-width: 24px !important;
+                min-height: 24px !important;
+                max-width: 32px !important;
+                max-height: 32px !important;
+                font-size: 1.8vw !important;
+                min-font-size: 10px !important;
+                max-font-size: 14px !important;
+            }
+            .plugin-window {
+                right: 8vw !important;
+                width: 80vw !important;
+                min-width: 160px !important;
+                max-width: 280px !important;
+                transform: translateX(calc(80vw + 20px)) !important;
+                border-radius: 16px 0 0 16px !important;
+            }
+            .plugin-window .window-header {
+                padding: 1vh 1.2vw !important;
+                min-height: 40px !important;
+            }
+            .plugin-window .window-title {
+                font-size: 1.6vw !important;
+                min-font-size: 12px !important;
+                max-font-size: 14px !important;
+            }
+            .plugin-window .window-content {
+                font-size: 1.4vw !important;
+                min-font-size: 11px !important;
+                max-font-size: 13px !important;
+                padding: 1vh 1vw !important;
+            }
+            #panelNotifications {
+                right: calc(8vw + 1vw) !important;
+                max-width: 60vw !important;
+                min-width: 140px !important;
+                top: 1vh !important;
+            }
+            #panelNotifications .notification {
+                padding: 1vh 0.8vw !important;
+            }
+            #panelNotifications .notif-icon {
+                font-size: 1.8vw !important;
+                min-font-size: 16px !important;
+                max-font-size: 22px !important;
+            }
+            #panelNotifications .notif-title {
+                font-size: 1.4vw !important;
+                min-font-size: 11px !important;
+                max-font-size: 13px !important;
+            }
+            #panelNotifications .notif-text {
+                font-size: 1.2vw !important;
+                min-font-size: 10px !important;
+                max-font-size: 12px !important;
+            }
         }
     `);
 
