@@ -1,6 +1,6 @@
 {
   "core": {
-    "version": "1.0.15",
+    "version": "1.0.16",
     "name": "Panel Core",
     "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/panel-core.user.js",
     "changelog": "Обновлены стили"
