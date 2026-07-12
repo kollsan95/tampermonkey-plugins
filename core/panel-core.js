@@ -505,8 +505,6 @@
             background: rgba(0, 0, 0, 0.04) !important;
             color: #1a1a1a !important;
             font-size: 1.2vw !important;
-            min-font-size: 14px !important;
-            max-font-size: 22px !important;
             cursor: pointer !important;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
             display: flex !important;
@@ -529,6 +527,7 @@
             color: #007aff !important;
         }
 
+        /* Tooltip */
         #panel-toggle-btn .tooltip {
             position: absolute !important;
             right: calc(100% + 0.8vw) !important;
@@ -539,8 +538,6 @@
             padding: 0.4vh 0.8vw !important;
             border-radius: 6px !important;
             font-size: 0.8vw !important;
-            min-font-size: 11px !important;
-            max-font-size: 14px !important;
             white-space: nowrap !important;
             pointer-events: none !important;
             opacity: 0 !important;
@@ -561,39 +558,6 @@
             transform: translateY(-50%) !important;
             border: 5px solid transparent !important;
             border-left-color: rgba(0, 0, 0, 0.85) !important;
-        }
-
-        /* Стиль для кнопки, когда панель скрыта (парит отдельно) */
-        #panel-toggle-btn.floating {
-            position: fixed !important;
-            bottom: 5% !important;
-            right: 2% !important;
-            width: 3.2vw !important;
-            height: 3.2vw !important;
-            min-width: 38px !important;
-            min-height: 38px !important;
-            max-width: 56px !important;
-            max-height: 56px !important;
-            font-size: 1.4vw !important;
-            min-font-size: 18px !important;
-            max-font-size: 26px !important;
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(10px) !important;
-            -webkit-backdrop-filter: blur(10px) !important;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            z-index: 999999 !important;
-            margin-top: 0 !important;
-        }
-
-        #panel-toggle-btn.floating:hover {
-            transform: scale(1.1) !important;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2) !important;
-        }
-
-        /* Анимация появления/исчезновения панели */
-        #panelTaskbar.hidden {
-            display: none !important;
         }
 
         /* Анимация для кнопки при переключении */
@@ -659,19 +623,15 @@
             const isVisible = !taskbar.classList.contains('hidden');
             
             if (isVisible) {
-                // Скрываем панель
                 taskbar.classList.add('hidden');
                 toggleBtn.classList.remove('active');
-                toggleBtn.classList.add('floating');
-                toggleBtn.textContent = '◀';
+                toggleBtn.textContent = '▶';
                 toggleBtn.querySelector('.tooltip').textContent = 'Показать панель';
                 this._setPanelState(false);
             } else {
-                // Показываем панель
                 taskbar.classList.remove('hidden');
-                toggleBtn.classList.remove('floating');
                 toggleBtn.classList.add('active');
-                toggleBtn.textContent = '▶';
+                toggleBtn.textContent = '◀';
                 toggleBtn.querySelector('.tooltip').textContent = 'Скрыть панель';
                 this._setPanelState(true);
             }
@@ -691,15 +651,13 @@
             
             if (isVisible) {
                 taskbar.classList.remove('hidden');
-                toggleBtn.classList.remove('floating');
                 toggleBtn.classList.add('active');
-                toggleBtn.textContent = '▶';
+                toggleBtn.textContent = '◀';
                 toggleBtn.querySelector('.tooltip').textContent = 'Скрыть панель';
             } else {
                 taskbar.classList.add('hidden');
-                toggleBtn.classList.add('floating');
                 toggleBtn.classList.remove('active');
-                toggleBtn.textContent = '◀';
+                toggleBtn.textContent = '▶';
                 toggleBtn.querySelector('.tooltip').textContent = 'Показать панель';
             }
         },
