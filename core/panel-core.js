@@ -857,19 +857,6 @@
                     }, 300);
                 }
             }, duration);
-
-            // Также показываем системное уведомление (если разрешено)
-            try {
-                if (typeof GM_notification === 'function') {
-                    GM_notification({
-                        title: title,
-                        text: text,
-                        timeout: duration
-                    });
-                }
-            } catch (e) {
-                // Игнорируем ошибки
-            }
         },
 
         _addIconToTaskbar: function(pluginId) {
