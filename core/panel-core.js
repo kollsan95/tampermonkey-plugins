@@ -261,7 +261,7 @@
         .plugin-window {
             position: fixed !important;
             top: 10% !important;
-            right: 0 !important;
+            right: 0;
             width: 30vw !important;
             min-width: 280px !important;
             max-width: 500px !important;
