@@ -73,8 +73,7 @@
     `);
 
     GM_addStyle(`
-        /* Основная панель */
-        #panel-core {
+        #panelTaskbar {
             position: fixed !important;
             bottom: 10% !important;
             right: 10% !important;
@@ -96,57 +95,19 @@
             gap: 6px !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            user-select: none !important;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
         }
 
-        /* Стилизация скроллбара */
-        #panel-core::-webkit-scrollbar {
+        #panelTaskbar::-webkit-scrollbar {
             width: 3px !important;
         }
-        #panel-core::-webkit-scrollbar-track {
-            background: transparent !important;
-        }
-        #panel-core::-webkit-scrollbar-thumb {
+        #panelTaskbar::-webkit-scrollbar-thumb {
             background: rgba(0, 0, 0, 0.15) !important;
             border-radius: 10px !important;
         }
-        #panel-core::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 0, 0, 0.25) !important;
-        }
 
-        /* Drag Handle (точки для перетаскивания) */
-        #panel-drag-handle {
-            width: 32px !important;
-            height: 4px !important;
-            background: rgba(0, 0, 0, 0.15) !important;
-            border-radius: 4px !important;
-            cursor: grab !important;
-            margin-bottom: 4px !important;
-            flex-shrink: 0 !important;
-            transition: all 0.2s !important;
-        }
-        #panel-drag-handle:hover {
-            background: rgba(0, 0, 0, 0.25) !important;
-            transform: scaleY(1.2) !important;
-        }
-        #panel-drag-handle:active {
-            cursor: grabbing !important;
-        }
-
-        /* Контейнер для иконок */
-        #panel-icons {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-            gap: 6px !important;
-            width: 100% !important;
-            flex: 1 !important;
-        }
-
-        /* Кнопка-ярлык */
-        .panel-btn {
+        /* Иконки в панели */
+        .taskbar-icon {
             width: 44px !important;
             height: 44px !important;
             min-width: 44px !important;
@@ -157,55 +118,49 @@
             color: #1a1a1a !important;
             font-size: 18px !important;
             cursor: pointer !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition: all 0.2s !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             position: relative !important;
             padding: 0 !important;
             flex-shrink: 0 !important;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
         }
 
-        .panel-btn:hover {
+        .taskbar-icon:hover {
             background: rgba(0, 0, 0, 0.08) !important;
             transform: scale(1.08) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
         }
 
-        .panel-btn:active {
-            transform: scale(0.92) !important;
-        }
-
-        /* Активная кнопка (если нужно) */
-        .panel-btn.active {
+        .taskbar-icon.active {
             background: rgba(0, 122, 255, 0.15) !important;
             color: #007aff !important;
-            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2) !important;
         }
 
-        /* Подсказка (tooltip) */
-        .panel-btn .tooltip {
+        /* Tooltip */
+        .taskbar-icon .tooltip {
             position: absolute !important;
             right: calc(100% + 12px) !important;
             top: 50% !important;
-            transform: translateY(-50%) scale(0.9) !important;
+            transform: translateY(-50%) !important;
             background: rgba(0, 0, 0, 0.85) !important;
             color: white !important;
             padding: 4px 12px !important;
             border-radius: 6px !important;
             font-size: 12px !important;
-            font-weight: 500 !important;
             white-space: nowrap !important;
             pointer-events: none !important;
             opacity: 0 !important;
             visibility: hidden !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            letter-spacing: 0.3px !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+            transition: all 0.2s !important;
         }
 
-        .panel-btn .tooltip::after {
+        .taskbar-icon:hover .tooltip {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .taskbar-icon .tooltip::after {
             content: '' !important;
             position: absolute !important;
             left: 100% !important;
@@ -215,14 +170,8 @@
             border-left-color: rgba(0, 0, 0, 0.85) !important;
         }
 
-        .panel-btn:hover .tooltip {
-            opacity: 1 !important;
-            visibility: visible !important;
-            transform: translateY(-50%) scale(1) !important;
-        }
-
-        /* Badge (счетчик уведомлений) */
-        .panel-btn .badge {
+        /* Badge */
+        .taskbar-icon .badge {
             position: absolute !important;
             top: -4px !important;
             right: -4px !important;
@@ -237,95 +186,146 @@
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            box-shadow: 0 2px 6px rgba(255, 59, 48, 0.4) !important;
             border: 2px solid rgba(255, 255, 255, 0.95) !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
         }
 
-        /* Кнопка "Настройки" (шестеренка) */
-        .panel-settings-btn {
-            width: 44px !important;
-            height: 44px !important;
-            min-width: 44px !important;
-            min-height: 44px !important;
+        .taskbar-icon .badge.hidden {
+            display: none !important;
+        }
+
+        /* ===== СТИЛИ ДЛЯ ОКОН ПЛАГИНОВ ===== */
+        #panelWindows {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            pointer-events: none !important;
+            z-index: 999998 !important;
+        }
+
+        .plugin-window {
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) scale(0.9) !important;
+            width: 500px !important;
+            max-width: 90vw !important;
+            max-height: 80vh !important;
+            background: white !important;
+            border-radius: 16px !important;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3) !important;
+            pointer-events: auto !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+        }
+
+        .plugin-window.open {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: translate(-50%, -50%) scale(1) !important;
+        }
+
+        .plugin-window.hidden {
+            display: none !important;
+        }
+
+        .plugin-window .window-header {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 16px 20px !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+            background: #f8f9fa !important;
+            flex-shrink: 0 !important;
+        }
+
+        .plugin-window .window-title {
+            font-weight: 600 !important;
+            font-size: 16px !important;
+            color: #1a1a1a !important;
+        }
+
+        .plugin-window .window-close {
+            width: 32px !important;
+            height: 32px !important;
             border: none !important;
             border-radius: 50% !important;
             background: rgba(0, 0, 0, 0.04) !important;
-            color: #1a1a1a !important;
+            color: #666 !important;
             font-size: 16px !important;
             cursor: pointer !important;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition: all 0.2s !important;
+        }
+
+        .plugin-window .window-close:hover {
+            background: rgba(255, 59, 48, 0.1) !important;
+            color: #ff3b30 !important;
+        }
+
+        .plugin-window .window-content {
+            padding: 20px !important;
+            overflow-y: auto !important;
+            flex: 1 !important;
+            color: #1a1a1a !important;
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+        }
+
+        /* ===== СТИЛИ ДЛЯ УВЕДОМЛЕНИЙ ===== */
+        #panelNotifications {
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            z-index: 9999999 !important;
             display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 0 !important;
-            margin-top: 4px !important;
-            flex-shrink: 0 !important;
-            opacity: 0.6 !important;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            max-width: 380px !important;
+            pointer-events: none !important;
         }
 
-        .panel-settings-btn:hover {
-            background: rgba(0, 0, 0, 0.08) !important;
-            opacity: 1 !important;
-            transform: rotate(60deg) scale(1.05) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+        #panelNotifications .notification {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px) !important;
+            border-radius: 12px !important;
+            padding: 14px 16px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            animation: notifSlideIn 0.3s ease !important;
         }
 
-        .panel-settings-btn:active {
-            transform: rotate(60deg) scale(0.95) !important;
+        #panelNotifications .notification.removing {
+            animation: notifSlideOut 0.3s ease forwards !important;
         }
 
-        /* Разделитель */
-        .panel-divider {
-            width: 28px !important;
-            height: 1px !important;
-            background: rgba(0, 0, 0, 0.08) !important;
-            margin: 4px 0 !important;
-            flex-shrink: 0 !important;
+        @keyframes notifSlideIn {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
-        /* Адаптивность для мобильных */
-        @media (max-width: 768px) {
-            #panel-core {
-                bottom: 8% !important;
-                right: 4% !important;
-                width: 56px !important;
-                padding: 10px 6px !important;
-                border-radius: 20px !important;
-            }
-            .panel-btn {
-                width: 38px !important;
-                height: 38px !important;
-                min-width: 38px !important;
-                min-height: 38px !important;
-                font-size: 16px !important;
-            }
-            .panel-settings-btn {
-                width: 38px !important;
-                height: 38px !important;
-                min-width: 38px !important;
-                min-height: 38px !important;
-                font-size: 14px !important;
-            }
-            .panel-btn .tooltip {
-                display: none !important;
-            }
+        @keyframes notifSlideOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(40px); }
         }
 
-        /* Анимация появления */
-        @keyframes panelFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        #panel-core {
-            animation: panelFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        #panelNotifications .notif-icon { font-size: 24px !important; }
+        #panelNotifications .notif-title { font-weight: 600 !important; font-size: 14px !important; }
+        #panelNotifications .notif-text { font-size: 13px !important; color: #555 !important; }
+        #panelNotifications .notif-close {
+            background: none !important;
+            border: none !important;
+            color: #999 !important;
+            cursor: pointer !important;
+            font-size: 16px !important;
         }
     `);
 
