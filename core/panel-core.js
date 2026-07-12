@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Panel Core - Универсальная панель управления
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.37
+// @version      1.0.45
 // @description  Ядро панели управления. Загружает и управляет плагинами.
 // @author       kollsan95
 // @match        *://*/*
@@ -40,24 +40,23 @@
             border-radius: 8px 0 0 8px !important;
             background: rgba(255, 255, 255, 0.95) !important;
             backdrop-filter: blur(8px) !important;
-            -webkit-backdrop-filter: blur(8px) !important;
             color: #1a1a1a !important;
             font-size: 14px !important;
             cursor: pointer !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            z-index: 1000000 !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            z-index: 1000000 !important;
-            box-shadow: -2px 0 12px rgba(0, 0, 0, 0.08) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            box-shadow: -2px 0 12px rgba(0,0,0,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
             border-right: none !important;
             user-select: none !important;
+            transition: all 0.3s !important;
         }
         #panel-toggle-flag:hover {
             background: rgba(255, 255, 255, 1) !important;
             transform: scale(1.05) !important;
-            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.12) !important;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.12) !important;
         }
         #panel-toggle-flag.active {
             background: rgba(0, 122, 255, 0.12) !important;
@@ -108,7 +107,6 @@
             max-width: 10% !important;
             height: 67% !important;
             backdrop-filter: blur(10px) !important;
-            -webkit-backdrop-filter: blur(10px) !important;
             z-index: 999999 !important;
             display: flex !important;
             flex-direction: column !important;
@@ -117,19 +115,16 @@
             overflow-y: auto !important;
             overflow-x: hidden !important;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s !important;
+            transition: transform 0.3s, opacity 0.3s !important;
         }
         #panelTaskbar.hidden {
             transform: translateX(100%) !important;
             opacity: 0 !important;
             pointer-events: none !important;
         }
-        #panelTaskbar.has-window-open {
-            background: rgba(235, 235, 237, 0) !important;
-        }
         #panelTaskbar::-webkit-scrollbar { width: 3px !important; }
         #panelTaskbar::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.15) !important;
+            background: rgba(0,0,0,0.15) !important;
             border-radius: 10px !important;
         }
 
@@ -157,7 +152,7 @@
         .taskbar-icon.active {
             background: white !important;
             color: #1a1a1a !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
             transform: scale(1.05) !important;
             border-radius: 0 20px 20px 0 !important;
         }
@@ -205,7 +200,7 @@
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            border: 2px solid rgba(255, 255, 255, 0.95) !important;
+            border: 2px solid rgba(255,255,255,0.95) !important;
         }
         .taskbar-icon .badge.hidden { display: none !important; }
 
@@ -228,14 +223,14 @@
             height: 67% !important;
             background: white !important;
             border-radius: 20px 0 0 20px !important;
-            box-shadow: -8px 0 40px rgba(0, 0, 0, 0.12) !important;
+            box-shadow: -8px 0 40px rgba(0,0,0,0.12) !important;
             pointer-events: auto !important;
             transform: translateX(calc(30vw + 20px)) !important;
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
             display: flex !important;
             flex-direction: column !important;
             overflow: hidden !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
             border-right: none !important;
             opacity: 0 !important;
             visibility: hidden !important;
@@ -252,7 +247,7 @@
             align-items: center !important;
             justify-content: space-between !important;
             padding: 16px 20px !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+            border-bottom: 1px solid rgba(0,0,0,0.06) !important;
             background: white !important;
             flex-shrink: 0 !important;
             min-height: 50px !important;
@@ -277,7 +272,7 @@
         }
         .plugin-window .window-content::-webkit-scrollbar { width: 6px !important; }
         .plugin-window .window-content::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.15) !important;
+            background: rgba(0,0,0,0.15) !important;
             border-radius: 10px !important;
         }
 
@@ -294,11 +289,11 @@
             pointer-events: none !important;
         }
         #panelNotifications .notification {
-            background: rgba(255, 255, 255, 0.95) !important;
+            background: rgba(255,255,255,0.95) !important;
             backdrop-filter: blur(10px) !important;
             border-radius: 12px !important;
             padding: 14px 16px !important;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important;
             display: flex !important;
             align-items: flex-start !important;
             gap: 12px !important;
@@ -569,39 +564,6 @@
         // ============================================================
         // Загрузка плагинов
         // ============================================================
-        _registerPluginResult: function(pluginId, module) {
-            const plugin = this._plugins[pluginId];
-            if (!plugin) {
-                console.warn(`⚠️ Panel Core: Плагин "${pluginId}" не найден`);
-                return;
-            }
-
-            if (module && typeof module.onOpen === 'function') {
-                plugin.onOpen = module.onOpen;
-                plugin.onClose = module.onClose || null;
-                plugin._loaded = true;
-                plugin._isLoading = false;
-                if (module.icon) plugin.icon = module.icon;
-                if (module.name) plugin.name = module.name;
-                
-                console.log(`✅ Panel Core: Плагин "${plugin.name}" (${pluginId}) зарегистрирован`);
-                this._updateTaskbar();
-            } else {
-                console.warn(`⚠️ Panel Core: Плагин "${pluginId}" не вернул onOpen функцию`);
-                plugin._loaded = true;
-                plugin._isLoading = false;
-                plugin.onOpen = function(container) {
-                    container.innerHTML = `
-                        <div style="padding:20px;text-align:center;color:#999;">
-                            <div style="font-size:48px;margin-bottom:16px;">${plugin.icon || '🔌'}</div>
-                            <h3>${plugin.name || 'Плагин'}</h3>
-                            <p style="font-size:13px;">Плагин не содержит onOpen функцию</p>
-                        </div>
-                    `;
-                };
-                this._updateTaskbar();
-            }
-        },
 
         loadPluginsFromVersion: function() {
             if (!this._isPanelVisible) {
@@ -688,20 +650,23 @@
         },
 
         _loadPlugin: function(pluginConfig) {
+            const pluginId = pluginConfig.id;
+            const pluginName = pluginConfig.name;
+
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: pluginConfig.downloadURL,
                 onload: function(response) {
                     if (response.status !== 200) {
-                        console.error(`❌ Panel Core: Не удалось загрузить ${pluginConfig.name} (${response.status})`);
+                        console.error(`❌ Panel Core: Не удалось загрузить ${pluginName} (${response.status})`);
                         return;
                     }
 
                     try {
-                        // Создаём запись в _plugins
-                        const pluginData = {
-                            id: pluginConfig.id,
-                            name: pluginConfig.name,
+                        // Создаём запись
+                        this._plugins[pluginId] = {
+                            id: pluginId,
+                            name: pluginName,
                             icon: pluginConfig.icon || '🔌',
                             _routes: pluginConfig.routes || [],
                             _version: pluginConfig.version || '1.0.0',
@@ -714,65 +679,66 @@
                             priority: pluginConfig.priority || 10
                         };
 
-                        this._plugins[pluginConfig.id] = pluginData;
-
                         // Выполняем код плагина
+                        const scriptContent = response.responseText;
                         const script = document.createElement('script');
                         script.textContent = `
                             (function() {
                                 try {
-                                    ${response.responseText}
-                                    
-                                    // Если плагин определил __plugin_result
-                                    if (typeof window.__plugin_result !== 'undefined') {
-                                        const result = window.__plugin_result;
-                                        const plugin = PanelCore._plugins['${pluginConfig.id}'];
-                                        if (plugin) {
-                                            if (typeof result.onOpen === 'function') {
-                                                plugin.onOpen = result.onOpen;
-                                            }
-                                            if (typeof result.onClose === 'function') {
-                                                plugin.onClose = result.onClose;
-                                            }
-                                            if (result.icon) plugin.icon = result.icon;
-                                            if (result.name) plugin.name = result.name;
-                                            plugin._loaded = true;
-                                            console.log('✅ Panel Core: Плагин "${pluginConfig.name}" зарегистрирован');
-                                            PanelCore._updateTaskbar();
-                                        }
-                                    } else {
-                                        console.warn('⚠️ Panel Core: Плагин "${pluginConfig.name}" не определил __plugin_result');
-                                        const plugin = PanelCore._plugins['${pluginConfig.id}'];
-                                        if (plugin) {
-                                            plugin._loaded = true;
-                                            plugin.onOpen = function(container) {
-                                                container.innerHTML = \`
-                                                    <div style="padding:20px;text-align:center;color:#999;">
-                                                        <div style="font-size:48px;margin-bottom:16px;">\${plugin.icon || '🔌'}</div>
-                                                        <h3>\${plugin.name || 'Плагин'}</h3>
-                                                        <p style="font-size:13px;">Плагин не содержит onOpen функцию</p>
-                                                    </div>
-                                                \`;
-                                            };
-                                            PanelCore._updateTaskbar();
-                                        }
-                                    }
+                                    ${scriptContent}
                                 } catch(e) {
-                                    console.error('❌ Panel Core: Ошибка выполнения ${pluginConfig.name}:', e);
+                                    console.error('❌ Panel Core: Ошибка выполнения ${pluginName}:', e);
                                 }
                             })();
                         `;
                         document.head.appendChild(script);
                         document.head.removeChild(script);
 
-                        console.log(`✅ Panel Core: Плагин "${pluginConfig.name}" загружен`);
+                        console.log(`✅ Panel Core: Плагин "${pluginName}" загружен`);
+
+                        // Проверяем, определил ли плагин __plugin_result
+                        if (typeof window.__plugin_result !== 'undefined') {
+                            const result = window.__plugin_result;
+                            const plugin = this._plugins[pluginId];
+                            if (plugin) {
+                                if (typeof result.onOpen === 'function') {
+                                    plugin.onOpen = result.onOpen;
+                                }
+                                if (typeof result.onClose === 'function') {
+                                    plugin.onClose = result.onClose;
+                                }
+                                if (result.icon) plugin.icon = result.icon;
+                                if (result.name) plugin.name = result.name;
+                                plugin._loaded = true;
+                                console.log(`✅ Panel Core: Плагин "${pluginName}" зарегистрирован (__plugin_result)`);
+                                this._updateTaskbar();
+                            }
+                            // Очищаем глобальный объект
+                            delete window.__plugin_result;
+                        } else {
+                            console.warn(`⚠️ Panel Core: Плагин "${pluginName}" не определил __plugin_result`);
+                            const plugin = this._plugins[pluginId];
+                            if (plugin) {
+                                plugin._loaded = true;
+                                plugin.onOpen = function(container) {
+                                    container.innerHTML = `
+                                        <div style="padding:20px;text-align:center;color:#999;">
+                                            <div style="font-size:48px;margin-bottom:16px;">${plugin.icon || '🔌'}</div>
+                                            <h3>${plugin.name || 'Плагин'}</h3>
+                                            <p style="font-size:13px;">Плагин не содержит onOpen функцию</p>
+                                        </div>
+                                    `;
+                                };
+                                this._updateTaskbar();
+                            }
+                        }
 
                     } catch (e) {
-                        console.error(`❌ Panel Core: Ошибка выполнения ${pluginConfig.name}:`, e);
+                        console.error(`❌ Panel Core: Ошибка выполнения ${pluginName}:`, e);
                     }
                 }.bind(this),
                 onerror: function() {
-                    console.error(`❌ Panel Core: Ошибка загрузки ${pluginConfig.name}`);
+                    console.error(`❌ Panel Core: Ошибка загрузки ${pluginName}`);
                 }
             });
         },
@@ -798,7 +764,7 @@
                 const routes = plugin._routes || [];
                 const isActive = routes.length === 0 || routes.some(route => this._matchRoute(currentUrl, route));
                 
-                if (!isActive || !plugin._loaded) {
+                if (!isActive || !plugin._loaded || typeof plugin.onOpen !== 'function') {
                     return;
                 }
 
@@ -1014,7 +980,6 @@
         }
     };
 
-    // Экспортируем PanelCore в глобальный объект
     window.PanelCore = PanelCore;
     PanelCore._init();
 

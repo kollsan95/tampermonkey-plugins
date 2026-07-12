@@ -16,10 +16,6 @@
 
     const PLUGIN_ID = 'zones-plugin';
 
-    // ============================================================
-    // 1. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-    // ============================================================
-
     function getSessionId() {
         const match = window.location.hash.match(/\/session\/(\d+)/);
         return match ? match[1] : null;
@@ -78,10 +74,6 @@
 
     let wasOpenedAfterBrokenFound = false;
 
-    // ============================================================
-    // 2. ЛОГИКА ЗАГРУЗКИ ДАННЫХ
-    // ============================================================
-
     function loadData(container) {
         const sessionId = getSessionId();
         const sectionId = getSectionId();
@@ -124,10 +116,6 @@
         });
     }
 
-    // ============================================================
-    // 3. ОТОБРАЖЕНИЕ ДАННЫХ
-    // ============================================================
-
     function renderData(container, mapData, sessionData) {
         if (!mapData || !mapData.data || !sessionData || !sessionData.zones) {
             container.innerHTML = `<div style="color:#d32f2f;padding:20px;">❌ Нет данных</div>`;
@@ -153,11 +141,12 @@
         const allPlaces = data.filter(item => item[idx.type] === '0');
         const brokenZones = allPlaces.filter(item => item[idx.zoneId] === 0 && !item[idx.available]);
 
-        // Обновляем badge через Core
-        if (typeof PanelCore !== 'undefined') {
-            if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
+        if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
+            if (typeof PanelCore !== 'undefined') {
                 PanelCore.updateBadge(PLUGIN_ID, 1);
-            } else if (brokenZones.length === 0) {
+            }
+        } else if (brokenZones.length === 0) {
+            if (typeof PanelCore !== 'undefined') {
                 PanelCore.updateBadge(PLUGIN_ID, 0);
             }
         }
@@ -298,11 +287,7 @@
         }
     }
 
-    // ============================================================
-    // 4. ВОЗВРАЩАЕМ РЕЗУЛЬТАТ ДЛЯ CORE
-    // ============================================================
-
-    // Просто определяем глобальный объект, который Core подхватит
+    // Определяем глобальный объект для Core
     window.__plugin_result = {
         onOpen: function(container) {
             loadData(container);
