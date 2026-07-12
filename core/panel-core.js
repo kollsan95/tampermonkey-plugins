@@ -120,8 +120,7 @@
             position: fixed !important;
             top: 10% !important;
             right: 0 !important;
-            width: 2.5% !important;
-            max-width: 40px !important;
+            max-width: 3% !important;
             height: 67% !important;
             backdrop-filter: blur(10px) !important;
             -webkit-backdrop-filter: blur(10px) !important;
@@ -144,7 +143,7 @@
         }
 
         #panelTaskbar.has-window-open {
-            background: rgba(235, 235, 237, 0.95) !important;
+            background: rgba(235, 235, 237, 0) !important;
         }
 
         #panelTaskbar::-webkit-scrollbar {
