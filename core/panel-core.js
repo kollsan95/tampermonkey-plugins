@@ -761,13 +761,14 @@
 
                         GM_setValue(CONFIG.STORAGE_KEY, JSON.stringify(data));
 
+                        // Проверяем Core
                         if (data.core) {
                             const currentVersion = GM_getValue('panel_core_version', '0.0.0');
                             if (currentVersion !== data.core.version) {
                                 GM_setValue('panel_core_version', data.core.version);
                                 const notifKey = `core_${data.core.version}`;
                                 if (!seenNotifications[notifKey]) {
-                                    PanelCore._showNotification(
+                                    this._showNotification(
                                         '🔄 Обновление ядра',
                                         `Panel Core обновлён до версии ${data.core.version}`,
                                         '⚙️',
@@ -780,26 +781,28 @@
                             console.log(`🔷 Panel Core: Версия ядра ${data.core.version}`);
                         }
 
+                        // Проверяем плагины
+                        let newPluginsCount = 0;
+                        let updatedPluginsCount = 0;
+
                         if (data.plugins && Array.isArray(data.plugins)) {
-                            let newPluginsCount = 0;
-                            let updatedPluginsCount = 0;
-                            
                             data.plugins.forEach(pluginConfig => {
                                 if (!pluginConfig.enabled) {
                                     console.log(`⏭️ Panel Core: Плагин "${pluginConfig.name}" отключён в конфиге`);
                                     return;
                                 }
 
-                                const existing = PanelCore._plugins[pluginConfig.id];
+                                const existing = this._plugins[pluginConfig.id];
                                 if (existing) {
                                     if (existing._version !== pluginConfig.version) {
                                         console.log(`🔄 Panel Core: Обновление плагина "${pluginConfig.name}" (${existing._version} → ${pluginConfig.version})`);
-                                        PanelCore._reloadPlugin(pluginConfig);
+                                        existing._version = pluginConfig.version;
+                                        existing._routes = pluginConfig.routes || [];
                                         updatedPluginsCount++;
                                         
                                         const notifKey = `${pluginConfig.id}_${pluginConfig.version}`;
                                         if (!seenNotifications[notifKey]) {
-                                            PanelCore._showNotification(
+                                            this._showNotification(
                                                 `🔄 Обновлён: ${pluginConfig.name}`,
                                                 `${pluginConfig.name} обновлён до версии ${pluginConfig.version}`,
                                                 pluginConfig.icon || '📦',
@@ -812,12 +815,36 @@
                                     return;
                                 }
 
+                                // Новый плагин — просто сохраняем информацию
                                 console.log(`📥 Panel Core: Новый плагин "${pluginConfig.name}" (${pluginConfig.id})`);
+                                console.log(`   Скачать: ${pluginConfig.downloadURL}`);
+                                console.log(`   Маршруты: ${pluginConfig.routes ? pluginConfig.routes.join(', ') : 'все страницы'}`);
+                                
+                                // Сохраняем плагин в _plugins (без загрузки кода)
+                                this._plugins[pluginConfig.id] = {
+                                    id: pluginConfig.id,
+                                    name: pluginConfig.name,
+                                    icon: pluginConfig.icon || '🔌',
+                                    badge: 0,
+                                    priority: pluginConfig.priority || 10,
+                                    onOpen: null, // Будет заполнено при первой загрузке
+                                    onClose: null,
+                                    onBadgeUpdate: null,
+                                    _windowElement: null,
+                                    _iconElement: null,
+                                    _version: pluginConfig.version || '1.0.0',
+                                    _downloadURL: pluginConfig.downloadURL,
+                                    _routes: pluginConfig.routes || [],
+                                    _isNew: true,
+                                    _loaded: false,
+                                    _pluginConfig: pluginConfig
+                                };
+                                
                                 newPluginsCount++;
                                 
                                 const notifKey = `${pluginConfig.id}_added`;
                                 if (!seenNotifications[notifKey]) {
-                                    PanelCore._showNotification(
+                                    this._showNotification(
                                         `✨ Новый плагин: ${pluginConfig.name}`,
                                         pluginConfig.description || 'Доступен новый плагин для панели управления',
                                         pluginConfig.icon || '🚀',
@@ -834,18 +861,31 @@
                             if (updatedPluginsCount > 0) {
                                 console.log(`✅ Panel Core: Обновлено ${updatedPluginsCount} плагинов`);
                             }
+                            
+                            if (newPluginsCount > 0 || updatedPluginsCount > 0) {
+                                this._updateTaskbar();
+                            }
                         }
 
                     } catch (e) {
                         console.error('❌ Panel Core: Ошибка парсинга version.json:', e);
                     }
-                },
+                }.bind(this),
                 onerror: function(error) {
                     console.error('❌ Panel Core: Ошибка загрузки version.json:', error);
                 }
             });
         },
-
+        _matchRoute: function(url, route) {
+            if (!route || route === '*') return true;
+            
+            const pattern = route
+                .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                .replace(/\\\*/g, '.*');
+            
+            const regex = new RegExp(`^${pattern}$`);
+            return regex.test(url);
+        },
         _reloadPlugin: function(pluginConfig) {
             const plugin = this._plugins[pluginConfig.id];
             if (!plugin) return;
