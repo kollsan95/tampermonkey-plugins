@@ -157,12 +157,6 @@
 
         /* Иконки в панели */
         .taskbar-icon {
-            width: 36px !important;
-            height: 36px !important;
-            min-width: 36px !important;
-            min-height: 36px !important;
-            max-width: 40px !important;
-            max-height: 40px !important;
             border: none !important;
             border-radius: 50% !important;
             background: rgba(0, 0, 0, 0.04) !important;
@@ -393,10 +387,6 @@
                 width: 40px !important;
             }
             .taskbar-icon {
-                width: 32px !important;
-                height: 32px !important;
-                min-width: 32px !important;
-                min-height: 32px !important;
                 font-size: 14px !important;
             }
             .plugin-window {
@@ -427,10 +417,6 @@
                 gap: 3px !important;
             }
             .taskbar-icon {
-                width: 28px !important;
-                height: 28px !important;
-                min-width: 28px !important;
-                min-height: 28px !important;
                 font-size: 12px !important;
             }
             .plugin-window {
