@@ -11,14 +11,28 @@
 (function() {
     'use strict';
 
-    const PLUGIN_ID = 'my-new-plugin';
-
-    if (typeof PanelCore === 'undefined' || typeof PanelCore._registerPluginResult !== 'function') {
+    if (typeof PanelCore === 'undefined') {
         console.error('❌ My Plugin: Panel Core не найден');
         return;
     }
 
-    PanelCore._registerPluginResult(PLUGIN_ID, {
+    const PLUGIN_ID = 'my-new-plugin';
+
+    if (PanelCore.getPlugin(PLUGIN_ID)) {
+        console.log('ℹ️ My Plugin: Уже зарегистрирован');
+        return;
+    }
+
+    console.log('🔌 My Plugin: Регистрация заглушки...');
+
+    PanelCore.registerPlugin({
+        id: PLUGIN_ID,
+        name: 'Мой новый плагин',
+        icon: '🚀',
+        badge: 0,
+        priority: 20,
+        version: '1.0.0',
+        routes: [],
         onOpen: function(container) {
             container.innerHTML = `
                 <div style="padding:20px;text-align:center;color:#666;">
