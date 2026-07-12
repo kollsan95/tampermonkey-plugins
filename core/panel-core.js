@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Panel Core - Универсальная панель управления
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.21
+// @version      1.0.22
 // @description  Ядро панели управления. Показывает иконки активных плагинов.
 // @author       kollsan95
 // @match        *://*/*
@@ -14,41 +14,19 @@
 // @downloadURL  https://kollsan95.github.io/tampermonkey-plugins/panel-core.user.js
 // ==/UserScript==
 
-/**
- * ============================================================
- *  PANEL CORE - Универсальная панель управления
- * ============================================================
- * 
- * 📌 ПРИНЦИП РАБОТЫ:
- *   1. Core загружает version.json и проверяет плагины
- *   2. Плагины сами определяют, где им запускаться через @match
- *   3. Core проверяет, какие плагины активны на текущей странице
- *   4. Показывает иконки активных плагинов в панели
- *   5. При клике на иконку — открывается окно плагина
- * ============================================================
- */
-
 (function() {
     'use strict';
 
     console.log('🔷 Panel Core: Инициализация...');
 
     // ============================================================
-    // 1. КОНФИГУРАЦИЯ
-    // ============================================================
-    const CONFIG = {
-        VERSION_URL: 'https://kollsan95.github.io/tampermonkey-plugins/version.json',
-        CHECK_INTERVAL: 3600000,
-        NOTIFICATIONS_KEY: 'panel_notifications_seen'
-    };
-
-    // ============================================================
-    // 2. СТИЛИ
+    // 1. СТИЛИ
     // ============================================================
     GM_addStyle(`
+        /* ===== ПАНЕЛЬ ЗАДАЧ ===== */
         #panelTaskbar {
             position: fixed;
-            right: 20px;
+            right: 0;
             top: 50%;
             transform: translateY(-50%);
             width: 44px;
@@ -59,7 +37,7 @@
             padding: 8px 4px;
             background: rgba(30, 30, 40, 0.85);
             backdrop-filter: blur(10px);
-            border-radius: 12px 0 0 12px;
+            border-radius: 10px 0 0 10px;
             box-shadow: -2px 0 15px rgba(0,0,0,0.15);
             box-sizing: border-box;
             transition: all 0.3s ease;
@@ -78,13 +56,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.7);
             transition: all 0.2s ease;
             position: relative;
         }
         #panelTaskbar .taskbar-icon:hover {
-            background: rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.18);
             color: #fff;
             transform: scale(1.05);
         }
@@ -139,10 +117,11 @@
             border-left-color: rgba(0,0,0,0.85);
         }
 
+        /* ===== КОНТЕЙНЕР ОКОН ===== */
         #panelWindows {
             position: fixed;
             top: 0;
-            right: 64px;
+            right: 44px;
             width: 20vw;
             min-width: 260px;
             max-width: 400px;
@@ -164,7 +143,7 @@
             box-sizing: border-box;
             padding: 16px 20px;
             overflow-y: auto;
-            transform: translateX(calc(100% + 64px));
+            transform: translateX(calc(100% + 44px));
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
             box-shadow: -4px 0 25px rgba(0,0,0,0.1);
@@ -219,10 +198,11 @@
             border-radius: 4px;
         }
 
+        /* ===== УВЕДОМЛЕНИЯ ===== */
         #panelNotifications {
             position: fixed;
             bottom: 20px;
-            right: 80px;
+            right: 60px;
             z-index: 10000;
             display: flex;
             flex-direction: column;
@@ -272,6 +252,15 @@
     `);
 
     // ============================================================
+    // 2. КОНФИГУРАЦИЯ
+    // ============================================================
+    const CONFIG = {
+        VERSION_URL: 'https://kollsan95.github.io/tampermonkey-plugins/version.json',
+        CHECK_INTERVAL: 3600000,
+        NOTIFICATIONS_KEY: 'panel_notifications_seen'
+    };
+
+    // ============================================================
     // 3. ЯДРО
     // ============================================================
     const PanelCore = {
@@ -280,10 +269,6 @@
         _windows: null,
         _notifications: null,
         _openPluginId: null,
-
-        // ============================================================
-        // Публичные методы
-        // ============================================================
 
         registerPlugin: function(plugin) {
             if (!plugin.id || !plugin.name || !plugin.icon || typeof plugin.onOpen !== 'function') {
@@ -311,7 +296,6 @@
             };
 
             console.log(`✅ Panel Core: Плагин "${plugin.name}" (${plugin.id}) зарегистрирован`);
-            
             this._updateTaskbar();
             return true;
         },
@@ -394,7 +378,7 @@
         },
 
         // ============================================================
-        // Загрузка плагинов из version.json
+        // ЗАГРУЗКА ПЛАГИНОВ
         // ============================================================
 
         loadPlugins: function() {
@@ -491,16 +475,14 @@
         },
 
         // ============================================================
-        // Управление панелью
+        // УПРАВЛЕНИЕ ПАНЕЛЬЮ
         // ============================================================
 
         _updateTaskbar: function() {
             if (!this._taskbar) return;
 
-            // Очищаем панель
             this._taskbar.innerHTML = '';
 
-            // Сортируем плагины по priority
             const sorted = Object.values(this._plugins).sort((a, b) => a.priority - b.priority);
 
             sorted.forEach(function(plugin) {
@@ -522,7 +504,6 @@
                 }.bind(this));
             }.bind(this));
 
-            // Если плагинов нет — скрываем панель
             if (sorted.length === 0) {
                 this._taskbar.classList.add('hidden');
             } else {
@@ -613,11 +594,10 @@
         },
 
         // ============================================================
-        // Инициализация
+        // ИНИЦИАЛИЗАЦИЯ
         // ============================================================
 
         _init: function() {
-            // Создаём панель
             this._taskbar = document.createElement('div');
             this._taskbar.id = 'panelTaskbar';
             document.body.appendChild(this._taskbar);
@@ -626,10 +606,8 @@
             this._windows.id = 'panelWindows';
             document.body.appendChild(this._windows);
 
-            // Загружаем плагины
             this.loadPlugins();
 
-            // Закрытие по клику вне окна
             document.addEventListener('click', function(e) {
                 if (this._openPluginId) {
                     const plugin = this._plugins[this._openPluginId];
@@ -641,14 +619,12 @@
                 }
             }.bind(this));
 
-            // Escape для закрытия
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && this._openPluginId) {
                     this.closePlugin(this._openPluginId);
                 }
             }.bind(this));
 
-            // Периодическая проверка обновлений
             setInterval(function() {
                 this.loadPlugins();
             }.bind(this), CONFIG.CHECK_INTERVAL);
