@@ -2,7 +2,7 @@
 // @name         Panel Core - Универсальная панель управления
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
 // @version      1.0.22
-// @description  Ядро панели управления. Показывает иконки активных плагинов.
+// @description  Ядро панели управления
 // @author       kollsan95
 // @match        *://*/*
 // @grant        GM_addStyle
@@ -23,7 +23,6 @@
     // 1. СТИЛИ
     // ============================================================
     GM_addStyle(`
-        /* ===== ПАНЕЛЬ ЗАДАЧ ===== */
         #panelTaskbar {
             position: fixed;
             right: 0;
@@ -43,9 +42,7 @@
             transition: all 0.3s ease;
             gap: 4px;
         }
-        #panelTaskbar.hidden {
-            display: none !important;
-        }
+        #panelTaskbar.hidden { display: none !important; }
         #panelTaskbar .taskbar-icon {
             width: 34px;
             height: 34px;
@@ -88,9 +85,7 @@
             padding: 0 4px;
             border: 2px solid rgba(30, 30, 40, 0.85);
         }
-        #panelTaskbar .taskbar-icon .badge.hidden {
-            display: none;
-        }
+        #panelTaskbar .taskbar-icon .badge.hidden { display: none; }
         #panelTaskbar .taskbar-icon .tooltip {
             position: absolute;
             right: 44px;
@@ -104,9 +99,7 @@
             pointer-events: none;
             transition: opacity 0.2s ease;
         }
-        #panelTaskbar .taskbar-icon:hover .tooltip {
-            opacity: 1;
-        }
+        #panelTaskbar .taskbar-icon:hover .tooltip { opacity: 1; }
         #panelTaskbar .taskbar-icon .tooltip::after {
             content: '';
             position: absolute;
@@ -117,7 +110,6 @@
             border-left-color: rgba(0,0,0,0.85);
         }
 
-        /* ===== КОНТЕЙНЕР ОКОН ===== */
         #panelWindows {
             position: fixed;
             top: 0;
@@ -152,9 +144,7 @@
             transform: translateX(0);
             pointer-events: all;
         }
-        #panelWindows .plugin-window.hidden {
-            display: none !important;
-        }
+        #panelWindows .plugin-window.hidden { display: none !important; }
         #panelWindows .plugin-window .window-header {
             display: flex;
             justify-content: space-between;
@@ -180,9 +170,7 @@
             padding: 0 4px;
             transition: color 0.2s;
         }
-        #panelWindows .plugin-window .window-close:hover {
-            color: #333;
-        }
+        #panelWindows .plugin-window .window-close:hover { color: #333; }
         #panelWindows .plugin-window .window-content {
             height: calc(100% - 55px);
             overflow-y: auto;
@@ -198,7 +186,6 @@
             border-radius: 4px;
         }
 
-        /* ===== УВЕДОМЛЕНИЯ ===== */
         #panelNotifications {
             position: fixed;
             bottom: 20px;
@@ -252,16 +239,7 @@
     `);
 
     // ============================================================
-    // 2. КОНФИГУРАЦИЯ
-    // ============================================================
-    const CONFIG = {
-        VERSION_URL: 'https://kollsan95.github.io/tampermonkey-plugins/version.json',
-        CHECK_INTERVAL: 3600000,
-        NOTIFICATIONS_KEY: 'panel_notifications_seen'
-    };
-
-    // ============================================================
-    // 3. ЯДРО
+    // 2. ЯДРО
     // ============================================================
     const PanelCore = {
         _plugins: {},
@@ -269,10 +247,11 @@
         _windows: null,
         _notifications: null,
         _openPluginId: null,
+        _isReady: false,
 
         registerPlugin: function(plugin) {
             if (!plugin.id || !plugin.name || !plugin.icon || typeof plugin.onOpen !== 'function') {
-                console.error('❌ Panel Core: Некорректные данные плагина:', plugin);
+                console.error('❌ Panel Core: Некорректные данные плагина');
                 return false;
             }
 
@@ -305,10 +284,6 @@
             if (!plugin) return;
             plugin.badge = count || 0;
             this._updateBadge(pluginId);
-        },
-
-        showNotification: function(title, text, icon = '🔔') {
-            this._showNotification(title, text, icon);
         },
 
         openPlugin: function(pluginId) {
@@ -378,104 +353,7 @@
         },
 
         // ============================================================
-        // ЗАГРУЗКА ПЛАГИНОВ
-        // ============================================================
-
-        loadPlugins: function() {
-            console.log('🔍 Panel Core: Загрузка плагинов...');
-
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: CONFIG.VERSION_URL,
-                onload: function(response) {
-                    if (response.status !== 200) {
-                        console.warn(`⚠️ Panel Core: Не удалось загрузить version.json (${response.status})`);
-                        return;
-                    }
-
-                    try {
-                        const data = JSON.parse(response.responseText);
-                        const seen = JSON.parse(GM_getValue(CONFIG.NOTIFICATIONS_KEY, '{}'));
-
-                        if (data.core) {
-                            const current = GM_getValue('panel_core_version', '0.0.0');
-                            if (current !== data.core.version) {
-                                GM_setValue('panel_core_version', data.core.version);
-                                if (!seen[`core_${data.core.version}`]) {
-                                    this._showNotification(
-                                        '🔄 Обновление ядра',
-                                        `Panel Core v${data.core.version}`,
-                                        '⚙️'
-                                    );
-                                    seen[`core_${data.core.version}`] = true;
-                                    GM_setValue(CONFIG.NOTIFICATIONS_KEY, JSON.stringify(seen));
-                                }
-                            }
-                        }
-
-                        if (data.plugins) {
-                            data.plugins.forEach(function(pluginConfig) {
-                                if (!pluginConfig.enabled) return;
-
-                                const existing = this._plugins[pluginConfig.id];
-                                if (existing) {
-                                    if (existing._version !== pluginConfig.version) {
-                                        console.log(`🔄 Обновлён: ${pluginConfig.name} (${pluginConfig.version})`);
-                                        existing._version = pluginConfig.version;
-                                    }
-                                    return;
-                                }
-
-                                console.log(`📥 Новый плагин: ${pluginConfig.name}`);
-                                this._loadPluginCode(pluginConfig);
-                            }.bind(this));
-                        }
-
-                    } catch (e) {
-                        console.error('❌ Panel Core: Ошибка:', e);
-                    }
-                }.bind(this),
-                onerror: function() {
-                    console.error('❌ Panel Core: Ошибка загрузки version.json');
-                }
-            });
-        },
-
-        _loadPluginCode: function(pluginConfig) {
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: pluginConfig.downloadURL,
-                onload: function(response) {
-                    if (response.status !== 200) {
-                        console.error(`❌ Panel Core: Не удалось загрузить ${pluginConfig.name}`);
-                        return;
-                    }
-
-                    try {
-                        const script = document.createElement('script');
-                        script.textContent = response.responseText;
-                        document.head.appendChild(script);
-                        document.head.removeChild(script);
-                        
-                        console.log(`✅ Panel Core: Плагин "${pluginConfig.name}" загружен`);
-                        
-                        this._showNotification(
-                            `✨ ${pluginConfig.name}`,
-                            pluginConfig.description || 'Доступен новый плагин',
-                            pluginConfig.icon || '🚀'
-                        );
-                    } catch (e) {
-                        console.error(`❌ Panel Core: Ошибка выполнения ${pluginConfig.name}:`, e);
-                    }
-                }.bind(this),
-                onerror: function() {
-                    console.error(`❌ Panel Core: Ошибка загрузки ${pluginConfig.name}`);
-                }
-            });
-        },
-
-        // ============================================================
-        // УПРАВЛЕНИЕ ПАНЕЛЬЮ
+        // ВНУТРЕННИЕ МЕТОДЫ
         // ============================================================
 
         _updateTaskbar: function() {
@@ -593,10 +471,6 @@
             } catch (e) {}
         },
 
-        // ============================================================
-        // ИНИЦИАЛИЗАЦИЯ
-        // ============================================================
-
         _init: function() {
             this._taskbar = document.createElement('div');
             this._taskbar.id = 'panelTaskbar';
@@ -606,7 +480,8 @@
             this._windows.id = 'panelWindows';
             document.body.appendChild(this._windows);
 
-            this.loadPlugins();
+            this._isReady = true;
+            console.log('🔷 Panel Core: Готов!');
 
             document.addEventListener('click', function(e) {
                 if (this._openPluginId) {
@@ -624,23 +499,10 @@
                     this.closePlugin(this._openPluginId);
                 }
             }.bind(this));
-
-            setInterval(function() {
-                this.loadPlugins();
-            }.bind(this), CONFIG.CHECK_INTERVAL);
-
-            console.log('🔷 Panel Core: Готов!');
         }
     };
 
-    // ============================================================
-    // 4. ЭКСПОРТ
-    // ============================================================
     window.PanelCore = PanelCore;
-
-    // ============================================================
-    // 5. ЗАПУСК
-    // ============================================================
     PanelCore._init();
 
 })();
