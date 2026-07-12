@@ -1,6 +1,6 @@
 {
   "core": {
-    "version": "1.0.53",
+    "version": "1.0.55",
     "name": "Panel Core",
     "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/panel-core.user.js"
   },
@@ -8,13 +8,10 @@
     {
       "id": "zones-plugin",
       "name": "Анализ зон",
-      "version": "1.0.18",
+      "version": "1.0.0",
       "icon": "🎫",
-      "description": "Анализ зон карты зала",
       "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/zones-plugin.js",
-      "routes": [],
       "enabled": true,
-      "author": "kollsan95",
       "priority": 10
     },
     {
@@ -22,13 +19,9 @@
       "name": "Мой новый плагин",
       "version": "1.0.0",
       "icon": "🚀",
-      "description": "Пример плагина-заглушки",
       "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/my-new-plugin.js",
-      "routes": [],
       "enabled": true,
-      "author": "kollsan95",
       "priority": 20
     }
-  ],
-  "lastUpdate": "2024-01-15T12:00:00Z"
+  ]
 }
