@@ -9,19 +9,19 @@
 ---
 
 ## 📦 Структура проекта
-tampermonkey-plugins/
-├── .github/
-│ └── workflows/
-│ └── build.yml # GitHub Actions (автосборка и деплой)
-├── core/
-│ └── panel-core.js # Ядро панели управления (не трогать!)
-├── plugins/
-│ ├── zones-plugin.js # Плагин: зоны зала
-│ └── example-plugin.js # Шаблон для новых плагинов
-├── dist/ # Папка для сборки (создаётся автоматически)
-├── version.json # Файл с версиями всех плагинов
-├── package.json # Управление проектом
-└── README.md # Этот файл
+	tampermonkey-plugins/
+	├── .github/
+	│ └── workflows/
+	│ └── build.yml # GitHub Actions (автосборка и деплой)
+	├── core/
+	│ └── panel-core.js # Ядро панели управления (не трогать!)
+	├── plugins/
+	│ ├── zones-plugin.js # Плагин: зоны зала
+	│ └── example-plugin.js # Шаблон для новых плагинов
+	├── dist/ # Папка для сборки (создаётся автоматически)
+	├── version.json # Файл с версиями всех плагинов
+	├── package.json # Управление проектом
+	└── README.md # Этот файл
 
 ---
 
