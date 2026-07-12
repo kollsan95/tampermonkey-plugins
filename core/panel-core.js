@@ -636,31 +636,29 @@
         _togglePanel: function() {
             const taskbar = document.getElementById('panelTaskbar');
             const toggleBtn = document.getElementById('panel-toggle-btn');
-            if (!taskbar || !toggleBtn) {
-                console.warn('⚠️ Panel Core: Панель или кнопка не найдены');
-                return;
-            }
+            if (!taskbar || !toggleBtn) return;
 
             const isVisible = !taskbar.classList.contains('hidden');
-            
-            // Обновляем tooltip безопасно
             const tooltip = toggleBtn.querySelector('.tooltip');
             
             if (isVisible) {
+                // Скрываем панель
                 taskbar.classList.add('hidden');
+                taskbar.style.display = 'none'; // ПРИНУДИТЕЛЬНО
                 toggleBtn.classList.remove('active');
                 toggleBtn.textContent = '▶';
                 if (tooltip) tooltip.textContent = 'Показать панель';
                 this._setPanelState(false);
             } else {
+                // Показываем панель
                 taskbar.classList.remove('hidden');
+                taskbar.style.display = ''; // Убираем принудительный стиль
                 toggleBtn.classList.add('active');
                 toggleBtn.textContent = '◀';
                 if (tooltip) tooltip.textContent = 'Скрыть панель';
                 this._setPanelState(true);
             }
             
-            // Анимация
             toggleBtn.classList.remove('pulse');
             void toggleBtn.offsetWidth;
             toggleBtn.classList.add('pulse');
@@ -669,21 +667,20 @@
         _applyPanelState: function() {
             const taskbar = document.getElementById('panelTaskbar');
             const toggleBtn = document.getElementById('panel-toggle-btn');
-            if (!taskbar || !toggleBtn) {
-                console.warn('⚠️ Panel Core: Панель или кнопка не найдены');
-                return;
-            }
+            if (!taskbar || !toggleBtn) return;
 
             const isVisible = this._getPanelState();
             const tooltip = toggleBtn.querySelector('.tooltip');
             
             if (isVisible) {
                 taskbar.classList.remove('hidden');
+                taskbar.style.display = '';
                 toggleBtn.classList.add('active');
                 toggleBtn.textContent = '◀';
                 if (tooltip) tooltip.textContent = 'Скрыть панель';
             } else {
                 taskbar.classList.add('hidden');
+                taskbar.style.display = 'none';
                 toggleBtn.classList.remove('active');
                 toggleBtn.textContent = '▶';
                 if (tooltip) tooltip.textContent = 'Показать панель';
