@@ -480,7 +480,6 @@
                 return false;
             }
 
-            // Если плагин уже есть как заглушка — обновляем его
             if (this._plugins[plugin.id]) {
                 const existing = this._plugins[plugin.id];
                 existing.name = plugin.name;
@@ -865,7 +864,8 @@
                 const routes = plugin._routes || [];
                 const isActive = routes.length === 0 || routes.some(route => this._matchRoute(currentUrl, route));
                 
-                if (!isActive) {
+                // Показываем только загруженные плагины (у которых есть onOpen)
+                if (!isActive || !plugin._loaded || typeof plugin.onOpen !== 'function') {
                     return;
                 }
 
