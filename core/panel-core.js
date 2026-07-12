@@ -813,7 +813,6 @@
                                 }
 
                                 console.log(`📥 Panel Core: Новый плагин "${pluginConfig.name}" (${pluginConfig.id})`);
-                                PanelCore._loadPluginFromURL(pluginConfig);
                                 newPluginsCount++;
                                 
                                 const notifKey = `${pluginConfig.id}_added`;
@@ -843,108 +842,6 @@
                 },
                 onerror: function(error) {
                     console.error('❌ Panel Core: Ошибка загрузки version.json:', error);
-                }
-            });
-        },
-
-        _loadPluginFromURL: function(pluginConfig) {
-            const downloadURL = pluginConfig.downloadURL;
-            if (!downloadURL) {
-                console.error(`❌ Panel Core: Нет downloadURL для плагина "${pluginConfig.name}"`);
-                return;
-            }
-
-            const tempPlugin = {
-                id: pluginConfig.id,
-                name: pluginConfig.name,
-                icon: pluginConfig.icon || '🔌',
-                version: pluginConfig.version || '1.0.0',
-                downloadURL: downloadURL,
-                priority: pluginConfig.priority || 10,
-                onOpen: function(container) {
-                    this._loadPluginCode(pluginConfig, container);
-                }.bind(this),
-                onClose: function() {},
-                onBadgeUpdate: function() {}
-            };
-
-            this.registerPlugin(tempPlugin);
-            
-            const plugin = this._plugins[pluginConfig.id];
-            if (plugin) {
-                plugin._pluginConfig = pluginConfig;
-                plugin._isNew = true;
-            }
-        },
-
-        _loadPluginCode: function(pluginConfig, container) {
-            const plugin = this._plugins[pluginConfig.id];
-            if (!plugin) return;
-
-            if (plugin._loaded) {
-                if (plugin._originalOnOpen) {
-                    plugin._originalOnOpen(container);
-                }
-                return;
-            }
-
-            container.innerHTML = `
-                <div style="text-align:center;padding:20px;color:#999;">
-                    Загрузка плагина "${pluginConfig.name}"...
-                </div>
-            `;
-
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: pluginConfig.downloadURL,
-                onload: function(response) {
-                    if (response.status !== 200) {
-                        container.innerHTML = `
-                            <div style="color:#d32f2f;text-align:center;padding:20px;">
-                                ❌ Ошибка загрузки плагина (${response.status})
-                            </div>
-                        `;
-                        return;
-                    }
-
-                    try {
-                        const script = document.createElement('script');
-                        script.textContent = `
-                            (function() {
-                                console.log('✅ Плагин "${pluginConfig.name}" загружен');
-                            })();
-                        `;
-                        document.head.appendChild(script);
-                        document.head.removeChild(script);
-
-                        plugin._loaded = true;
-                        
-                        if (typeof plugin.onOpen === 'function') {
-                            plugin._originalOnOpen = plugin.onOpen;
-                            plugin.onOpen = function(cont) {
-                                if (plugin._originalOnOpen) {
-                                    plugin._originalOnOpen(cont);
-                                }
-                            };
-                            plugin._originalOnOpen(container);
-                        }
-
-                    } catch (e) {
-                        container.innerHTML = `
-                            <div style="color:#d32f2f;text-align:center;padding:20px;">
-                                ❌ Ошибка выполнения плагина: ${e.message}
-                            </div>
-                        `;
-                        console.error('❌ Panel Core: Ошибка выполнения плагина:', e);
-                    }
-                },
-                onerror: function(error) {
-                    container.innerHTML = `
-                        <div style="color:#d32f2f;text-align:center;padding:20px;">
-                            ❌ Ошибка загрузки плагина
-                        </div>
-                    `;
-                    console.error('❌ Panel Core: Ошибка загрузки плагина:', error);
                 }
             });
         },

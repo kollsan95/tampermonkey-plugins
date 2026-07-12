@@ -1,6 +1,6 @@
 {
   "core": {
-    "version": "1.0.30",
+    "version": "1.0.31",
     "name": "Panel Core",
     "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/panel-core.user.js",
     "changelog": "Обновлены стили"
@@ -15,7 +15,8 @@
       "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/zones-plugin.js",
       "enabled": true,
       "author": "kollsan95",
-      "changelog": "Первый релиз плагина"
+      "changelog": "Первый релиз плагина",
+      "routes": ["/session/*/map/section/*"]
     },
     {
       "id": "my-new-plugin",
@@ -26,7 +27,8 @@
       "downloadURL": "https://kollsan95.github.io/tampermonkey-plugins/plugins/my-new-plugin.js",
       "enabled": true,
       "author": "kollsan95",
-      "changelog": "Первый релиз"
+      "changelog": "Первый релиз",
+      "routes":[]
     }
   ],
   "lastUpdate": "2024-01-15T12:00:00Z"

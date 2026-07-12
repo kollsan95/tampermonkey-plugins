@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         My New Plugin - Анализ зон
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.2
+// @version      1.0.3
 // @description  Анализ зон карты зала: поиск сломанных зон в секторе
 // @author       kollsan95
 // @match        *://*/*#/session/*/map/section/*
@@ -10,33 +10,28 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @run-at       document-end
-// ==/UserScript==
+// ==/UserScript//
 
 (function() {
     'use strict';
 
-    // ============================================================
-    // 1. ПРОВЕРКА CORE
-    // ============================================================
-
+    // Если Core нет — выходим (он сам подгрузит плагин позже)
     if (typeof PanelCore === 'undefined') {
-        // Core не загружен — выходим, он сам подгрузит плагин
-        console.log('⏳ My Plugin: Core не найден');
+        console.log('⏳ My Plugin: Ожидание Core...');
         return;
     }
 
     const PLUGIN_ID = 'my-new-plugin';
 
-    // Если уже зарегистрирован — не дублируем
+    // Если уже зарегистрирован — выходим
     if (PanelCore.getPlugin(PLUGIN_ID)) {
-        console.log('ℹ️ My Plugin: Уже зарегистрирован');
         return;
     }
 
     console.log('📊 My Plugin: Регистрация...');
 
     // ============================================================
-    // 2. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
     // ============================================================
 
     function getSessionId() {
@@ -98,7 +93,7 @@
     }
 
     // ============================================================
-    // 3. ЗАГРУЗКА ДАННЫХ
+    // ЗАГРУЗКА ДАННЫХ
     // ============================================================
 
     let wasOpenedAfterBrokenFound = false;
@@ -146,7 +141,7 @@
     }
 
     // ============================================================
-    // 4. ОТОБРАЖЕНИЕ
+    // ОТОБРАЖЕНИЕ
     // ============================================================
 
     function renderData(container, mapData, sessionData) {
@@ -291,7 +286,7 @@
         html += `</div>`;
         container.innerHTML = html;
 
-        // Обработчики раскрытия
+        // Обработчики раскрытия плиток
         container.querySelectorAll('.zone-group').forEach(group => {
             const header = group.querySelector('.zone-header');
             const body = group.querySelector('.zone-body');
@@ -310,7 +305,7 @@
             });
         });
 
-        // Снимаем уведомление
+        // Снимаем уведомление после открытия
         if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
             wasOpenedAfterBrokenFound = true;
             PanelCore.updateBadge(PLUGIN_ID, 0);
@@ -318,7 +313,7 @@
     }
 
     // ============================================================
-    // 5. РЕГИСТРАЦИЯ
+    // РЕГИСТРАЦИЯ
     // ============================================================
 
     PanelCore.registerPlugin({
@@ -327,7 +322,7 @@
         icon: '📊',
         badge: 0,
         priority: 10,
-        version: '1.0.2',
+        version: '1.0.3',
         onOpen: function(container) {
             loadData(container);
         },
