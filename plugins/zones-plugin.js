@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Zones Plugin - Анализ зон
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.6
+// @version      1.0.7
 // @description  Анализ зон карты зала: поиск сломанных зон в секторе
 // @author       kollsan95
 // @grant        GM_xmlhttpRequest
@@ -18,11 +18,13 @@
 
     function getSessionId() {
         const match = window.location.hash.match(/\/session\/(\d+)/);
+        console.log('🔍 getSessionId match:', match);
         return match ? match[1] : null;
     }
 
     function getSectionId() {
         const match = window.location.hash.match(/\/section\/(\d+)/);
+        console.log('🔍 getSectionId match:', match);
         return match ? match[1] : null;
     }
 
@@ -35,15 +37,19 @@
         for (let cookie of cookies) {
             const [name, value] = cookie.trim().split('=');
             if (name === 'token' || name === 'access_token' || name === 'auth_token') {
+                console.log('🔑 Токен найден в куках');
                 return value;
             }
         }
         try {
-            return localStorage.getItem('token') || 
+            const token = localStorage.getItem('token') || 
                    localStorage.getItem('access_token') || 
                    sessionStorage.getItem('token') ||
                    sessionStorage.getItem('access_token');
+            if (token) console.log('🔑 Токен найден в storage');
+            return token;
         } catch (e) {
+            console.warn('⚠️ Не удалось прочитать storage:', e);
             return null;
         }
     }
@@ -51,10 +57,12 @@
     function makeRequest(url, callback) {
         const token = getToken();
         if (!token) {
+            console.error('❌ Нет токена для авторизации');
             callback({ status: 401 });
             return;
         }
 
+        console.log('📡 Запрос к API:', url);
         GM_xmlhttpRequest({
             method: 'GET',
             url: url,
@@ -64,9 +72,11 @@
                 'Accept': 'application/json'
             },
             onload: function(response) {
+                console.log('📥 Ответ получен, статус:', response.status);
                 callback(response);
             },
             onerror: function(error) {
+                console.error('❌ Ошибка запроса:', error);
                 callback({ status: 0, error: error });
             }
         });
@@ -78,8 +88,10 @@
         const sessionId = getSessionId();
         const sectionId = getSectionId();
 
+        console.log('📊 Загрузка данных: sessionId=' + sessionId + ', sectionId=' + sectionId);
+
         if (!sessionId || !sectionId) {
-            container.innerHTML = `<div style="color:#999;padding:20px;">❌ Данные не найдены</div>`;
+            container.innerHTML = `<div style="color:#999;padding:20px;">❌ Данные не найдены: sessionId=${sessionId}, sectionId=${sectionId}</div>`;
             return;
         }
 
@@ -92,33 +104,60 @@
 
         function checkDone() {
             done++;
+            console.log('📊 Проверка завершения: ' + done + '/2');
             if (done === 2) {
                 try {
                     renderData(container, mapData, sessionData);
                 } catch (e) {
+                    console.error('❌ Ошибка рендеринга:', e);
                     container.innerHTML = `<div style="color:#d32f2f;padding:20px;">❌ ${e.message}</div>`;
                 }
             }
         }
 
         makeRequest(mapUrl, function(r) {
+            console.log('📥 mapUrl ответ:', r.status);
             if (r.status === 200) {
-                try { mapData = JSON.parse(r.responseText); } catch(e) {}
+                try { 
+                    mapData = JSON.parse(r.responseText); 
+                    console.log('✅ Данные карты загружены, мест:', mapData.data ? mapData.data.length : 0);
+                } catch(e) {
+                    console.error('❌ Ошибка парсинга карты:', e);
+                }
+            } else {
+                console.error('❌ Ошибка mapUrl:', r.status);
             }
             checkDone();
         });
 
         makeRequest(sessionUrl, function(r) {
+            console.log('📥 sessionUrl ответ:', r.status);
             if (r.status === 200) {
-                try { sessionData = JSON.parse(r.responseText); } catch(e) {}
+                try { 
+                    sessionData = JSON.parse(r.responseText); 
+                    console.log('✅ Данные сессии загружены, зон:', sessionData.zones ? sessionData.zones.length : 0);
+                } catch(e) {
+                    console.error('❌ Ошибка парсинга сессии:', e);
+                }
+            } else {
+                console.error('❌ Ошибка sessionUrl:', r.status);
             }
             checkDone();
         });
     }
 
     function renderData(container, mapData, sessionData) {
-        if (!mapData || !mapData.data || !sessionData || !sessionData.zones) {
-            container.innerHTML = `<div style="color:#d32f2f;padding:20px;">❌ Нет данных</div>`;
+        console.log('📊 renderData вызван');
+        console.log('mapData:', mapData ? 'есть' : 'нет');
+        console.log('sessionData:', sessionData ? 'есть' : 'нет');
+
+        if (!mapData || !mapData.data) {
+            container.innerHTML = `<div style="color:#d32f2f;padding:20px;">❌ Нет данных карты: ${mapData ? 'есть mapData, но нет data' : 'mapData null'}</div>`;
+            return;
+        }
+
+        if (!sessionData || !sessionData.zones) {
+            container.innerHTML = `<div style="color:#d32f2f;padding:20px;">❌ Нет данных сессии: ${sessionData ? 'есть sessionData, но нет zones' : 'sessionData null'}</div>`;
             return;
         }
 
@@ -138,14 +177,19 @@
             available: schema.indexOf('available')
         };
 
+        console.log('📊 Индексы полей:', idx);
+
         const allPlaces = data.filter(item => item[idx.type] === '0');
         const brokenZones = allPlaces.filter(item => item[idx.zoneId] === 0 && !item[idx.available]);
 
-        // Обновляем badge через Core
-        if (typeof PanelCore !== 'undefined') {
-            if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
+        console.log('📊 Всего мест:', allPlaces.length, 'Сломанных:', brokenZones.length);
+
+        if (brokenZones.length > 0 && !wasOpenedAfterBrokenFound) {
+            if (typeof PanelCore !== 'undefined') {
                 PanelCore.updateBadge(PLUGIN_ID, 1);
-            } else if (brokenZones.length === 0) {
+            }
+        } else if (brokenZones.length === 0) {
+            if (typeof PanelCore !== 'undefined') {
                 PanelCore.updateBadge(PLUGIN_ID, 0);
             }
         }
@@ -286,7 +330,7 @@
         }
     }
 
-    // ★★★ ГЛАВНОЕ: передаём результат в Core ★★★
+    // Регистрируем плагин в Core
     if (typeof PanelCore !== 'undefined' && typeof PanelCore._registerPluginResult === 'function') {
         PanelCore._registerPluginResult(PLUGIN_ID, {
             onOpen: function(container) {
@@ -296,6 +340,7 @@
                 console.log('🎫 Zones Plugin: Закрыт');
             }
         });
+        console.log('✅ Zones Plugin: Зарегистрирован в Core');
     } else {
         console.error('❌ Zones Plugin: Panel Core не найден или нет метода _registerPluginResult');
     }
