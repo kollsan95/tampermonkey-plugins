@@ -77,14 +77,12 @@
             position: fixed !important;
             top: 10% !important;
             right: 0 !important;
-            width: 4vw !important;
-            min-width: 40px !important;
-            max-width: 64px !important;
+            width: 2vw !important;
+            max-width: 55px !important;
             height: 80% !important;
-            background: rgba(245, 245, 247, 0.95) !important;  /* слегка серая по умолчанию */
+            background: rgb(236, 235, 235) !important;
             backdrop-filter: blur(10px) !important;
             -webkit-backdrop-filter: blur(10px) !important;
-            border-radius: 24px 0 0 24px !important;
             padding: 1.2vh 0.6vw !important;
             box-shadow: 
                 -4px 0 32px rgba(0, 0, 0, 0.08),
@@ -124,14 +122,12 @@
             max-width: 48px !important;
             max-height: 48px !important;
             border: none !important;
-            border-radius: 50% !important;
-            background: transparent !important;
+            border-radius: 0 10px 10px 0 !important;
+            background: rgba(0, 0, 0, 0.04) !important;
             color: #1a1a1a !important;
             font-size: 1.2vw !important;
-            min-font-size: 14px !important;
-            max-font-size: 22px !important;
             cursor: pointer !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition: all 0.2s !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -141,7 +137,7 @@
         }
 
         .taskbar-icon:hover {
-            background: rgba(0, 0, 0, 0.06) !important;
+            background: rgba(255, 255, 255, 0.32) !important;
             transform: scale(1.08) !important;
         }
 
@@ -290,7 +286,7 @@
         }
 
         .plugin-window .window-content {
-            padding: 2vh 1.5vw !important;
+            padding: 1.5vh 4vw 1.5vh 1.5vh !important;
             overflow-y: auto !important;
             flex: 1 !important;
             color: #1a1a1a !important;
@@ -382,8 +378,7 @@
         /* ===== АДАПТИВ ===== */
         @media (max-width: 768px) {
             #panelTaskbar {
-                width: 6vw !important;
-                min-width: 36px !important;
+                width: 3vw !important;
                 max-width: 48px !important;
                 padding: 1vh 0.4vw !important;
             }
@@ -399,7 +394,7 @@
                 max-font-size: 18px !important;
             }
             .plugin-window {
-                right: 6vw !important;
+                right: 0;
                 width: 70vw !important;
                 min-width: 200px !important;
                 max-width: 320px !important;
@@ -414,7 +409,7 @@
                 font-size: 1.2vw !important;
                 min-font-size: 12px !important;
                 max-font-size: 14px !important;
-                padding: 1.5vh 1.2vw !important;
+                padding: 1.5vh 4vw 1.5vh 1.5vh !important;
             }
             #panelNotifications {
                 right: calc(6vw + 1.5vw) !important;
@@ -438,8 +433,7 @@
 
         @media (max-width: 480px) {
             #panelTaskbar {
-                width: 8vw !important;
-                min-width: 32px !important;
+                width: 3vw !important;
                 max-width: 40px !important;
                 padding: 0.8vh 0.3vw !important;
                 gap: 0.3vh !important;
@@ -457,8 +451,8 @@
                 max-font-size: 14px !important;
             }
             .plugin-window {
-                right: 8vw !important;
-                width: 80vw !important;
+                right: 0;
+                width: 70vw !important;
                 min-width: 160px !important;
                 max-width: 280px !important;
                 transform: translateX(calc(80vw + 20px)) !important;
@@ -477,7 +471,7 @@
                 font-size: 1.4vw !important;
                 min-font-size: 11px !important;
                 max-font-size: 13px !important;
-                padding: 1vh 1vw !important;
+                padding: 1.5vh 4vw 1.5vh 1.5vh !important;
             }
             #panelNotifications {
                 right: calc(8vw + 1vw) !important;
