@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Panel Core - Универсальная панель управления
 // @namespace    https://github.com/kollsan95/tampermonkey-plugins
-// @version      1.0.34
+// @version      1.0.35
 // @description  Ядро панели управления. Загружает плагины из version.json с уведомлениями
 // @author       kollsan95
 // @match        *://*/*
@@ -496,7 +496,6 @@
                 return true;
             }
 
-            // Новый плагин
             this._plugins[plugin.id] = {
                 id: plugin.id,
                 name: plugin.name,
@@ -794,7 +793,6 @@
                                 console.log(`✅ Panel Core: Обновлено ${updatedPluginsCount} плагинов`);
                             }
                             
-                            // Загружаем новые плагины
                             pluginsToLoad.forEach(id => {
                                 const plugin = this._plugins[id];
                                 if (plugin && plugin._downloadURL) {
@@ -803,7 +801,9 @@
                             });
                             
                             if (newPluginsCount > 0 || updatedPluginsCount > 0) {
-                                this._updateTaskbar();
+                                setTimeout(() => {
+                                    this._updateTaskbar();
+                                }, 500);
                             }
                         }
 
@@ -840,6 +840,10 @@
                         document.head.appendChild(script);
                         document.head.removeChild(script);
                         console.log(`✅ Panel Core: Плагин "${plugin.name}" загружен`);
+                        
+                        setTimeout(() => {
+                            this._updateTaskbar();
+                        }, 300);
                     } catch (e) {
                         console.error(`❌ Panel Core: Ошибка выполнения ${plugin.name}:`, e);
                     }
@@ -851,7 +855,12 @@
         },
 
         _updateTaskbar: function() {
-            if (!this._taskbar) return;
+            if (!this._taskbar) {
+                console.warn('⚠️ Panel Core: _taskbar не существует');
+                return;
+            }
+
+            console.log(`🔧 Panel Core: Обновление панели, плагинов: ${Object.keys(this._plugins).length}`);
 
             this._taskbar.innerHTML = '';
 
@@ -864,7 +873,6 @@
                 const routes = plugin._routes || [];
                 const isActive = routes.length === 0 || routes.some(route => this._matchRoute(currentUrl, route));
                 
-                // Показываем только загруженные плагины (у которых есть onOpen)
                 if (!isActive || !plugin._loaded || typeof plugin.onOpen !== 'function') {
                     return;
                 }
@@ -988,6 +996,9 @@
 
             if (this._isPanelVisible) {
                 this.loadPluginsFromVersion();
+                setTimeout(() => {
+                    this._updateTaskbar();
+                }, 1000);
             }
 
             document.addEventListener('click', (e) => {
